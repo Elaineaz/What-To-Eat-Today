@@ -139,6 +139,17 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .btn-outline:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink)}
 .btn-outline:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
 .footer-note{text-align:center;font-size:11px;color:#ccc;margin-top:32px;line-height:2}
+
+/* 保存按钮 */
+.btn-save{background:linear-gradient(135deg,#f5c842,#f0a020);color:#1a1a1a;border-color:#c8900a;box-shadow:4px 4px 0 #c8900a}
+.btn-save:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 #c8900a}
+.btn-save:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #c8900a}
+.btn-save:disabled{opacity:.6;cursor:not-allowed;transform:none}
+/* 保存成功提示 */
+.save-toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#1a1a1a;color:#fff;padding:12px 24px;border-radius:999px;
+  font-size:13px;font-weight:700;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap}
+.save-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -217,11 +228,15 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 
     <div class="action-row">
       <button class="btn btn-outline" onclick="resetAll()">🔄 再算一次</button>
+      <button class="btn btn-save" id="save-btn" onclick="saveImage()">📸 保存图片</button>
     </div>
     <div class="footer-note">卦象仅供娱乐 · 吃好才是真道理<br/>愿你今日口腹大满足 🍜</div>
   </div>
 
 </div>
+<!-- 保存提示 -->
+<div class="save-toast" id="save-toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 // ══════════════════════════════════════════════
 //  全局菜品大库（100+ 种）
@@ -1182,6 +1197,78 @@ function getTarotSVG(num) {
     'default': `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="28" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.4)" stroke-width="2"/><path d="M40 20 L42 28 L50 28 L44 33 L46 41 L40 36 L34 41 L36 33 L30 28 L38 28 Z" fill="rgba(255,255,255,0.7)"/></svg>`
   };
   return svgs[num] || svgs['default'];
+}
+
+function saveImage() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 生成中…';
+
+  // 截图目标：卦象/塔罗 + 食物卡片
+  const card = document.getElementById('food-card');
+  const tarotEl = document.getElementById('tarot-display');
+  const hexEl = document.getElementById('hex-display');
+
+  // 找到实际显示的那个卦象区
+  const topEl = (tarotEl.style.display !== 'none') ? tarotEl : hexEl;
+
+  // 创建一个临时容器，把两块内容包在一起截图
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = [
+    'position:fixed', 'left:-9999px', 'top:0',
+    'width:480px', 'padding:28px 24px',
+    'background:#fdf8f2',
+    'font-family:PingFang SC,Microsoft YaHei,sans-serif',
+    'display:flex', 'flex-direction:column', 'align-items:center', 'gap:20px'
+  ].join(';');
+
+  // 水印
+  const watermark = document.createElement('div');
+  watermark.style.cssText = 'font-size:11px;color:#ccc;letter-spacing:1px;margin-bottom:-8px';
+  watermark.textContent = '🔮 今天吃什么 · 占卜';
+
+  // 克隆内容
+  const topClone = topEl.cloneNode(true);
+  topClone.style.display = 'flex';
+  const cardClone = card.cloneNode(true);
+  cardClone.style.animation = 'none';
+  cardClone.style.width = '100%';
+
+  wrapper.appendChild(watermark);
+  wrapper.appendChild(topClone);
+  wrapper.appendChild(cardClone);
+  document.body.appendChild(wrapper);
+
+  html2canvas(wrapper, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#fdf8f2',
+    logging: false
+  }).then(canvas => {
+    document.body.removeChild(wrapper);
+
+    // 下载图片
+    const link = document.createElement('a');
+    const foodName = document.getElementById('food-name').textContent || '今日食运';
+    link.download = `今天吃${foodName}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    // 显示提示
+    showToast('📸 图片已保存！');
+  }).catch(() => {
+    showToast('😅 保存失败，请截图保存');
+  }).finally(() => {
+    btn.disabled = false;
+    btn.innerHTML = '📸 保存图片';
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('save-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 function resetAll() {
