@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>今天吃什么 · 占卜</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fdf8f2;--ink:#1a1a1a;--muted:#999;
+  --gold:#f5c842;--purple:#c8a0e8;--radius:20px;
+}
+html,body{min-height:100%;background:var(--bg);font-family:'PingFang SC','Microsoft YaHei',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(circle at 10% 15%,#ffd6cc44 0%,transparent 35%),
+             radial-gradient(circle at 90% 80%,#d6f5e844 0%,transparent 35%),
+             radial-gradient(circle at 50% 50%,#ede0ff22 0%,transparent 50%)}
+.wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:32px 20px 60px}
+
+/* 标题 */
+.site-title{text-align:center;margin-bottom:28px}
+.site-title h1{font-size:clamp(22px,6vw,32px);font-weight:900;letter-spacing:4px;line-height:1.3}
+.site-title p{font-size:13px;color:var(--muted);margin-top:8px;letter-spacing:1px}
+
+/* 模式切换 */
+.mode-tabs{display:flex;gap:10px;justify-content:center;margin-bottom:28px}
+.mode-tab{padding:10px 24px;border-radius:999px;border:2.5px solid var(--ink);background:transparent;
+  font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;
+  box-shadow:3px 3px 0 var(--ink)}
+.mode-tab.active{background:var(--ink);color:#fff;box-shadow:none;transform:translate(2px,2px)}
+.mode-tab:not(.active):hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+
+/* 起卦区 */
+.cast-section{display:flex;flex-direction:column;align-items:center;gap:20px;margin-bottom:32px}
+.cast-hint{font-size:13px;color:var(--muted);text-align:center;line-height:2}
+
+/* 铜钱按钮 */
+.coin-btn{width:150px;height:150px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#fff8e0,#f5c842 60%,#d4a010);
+  border:4px solid #c8900a;
+  box-shadow:0 6px 24px rgba(200,144,10,.35),inset 0 2px 8px rgba(255,255,255,.6);
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden}
+.coin-btn::after{content:'';position:absolute;width:100px;height:100px;border-radius:50%;border:3px solid rgba(200,144,10,.4)}
+.coin-btn:hover{transform:scale(1.05);box-shadow:0 10px 32px rgba(200,144,10,.45)}
+.coin-btn:active{transform:scale(.96)}
+.coin-btn.shaking{animation:coinShake .6s ease}
+@keyframes coinShake{0%,100%{transform:rotate(0) scale(1.02)}15%{transform:rotate(-12deg) scale(1.06)}30%{transform:rotate(12deg) scale(1.06)}45%{transform:rotate(-8deg) scale(1.04)}60%{transform:rotate(8deg) scale(1.04)}75%{transform:rotate(-4deg) scale(1.02)}}
+.coin-icon{font-size:44px;line-height:1}
+.coin-label{font-size:13px;font-weight:900;color:#7a5000;letter-spacing:2px}
+
+/* 塔罗牌堆 */
+.tarot-deck{position:relative;width:120px;height:180px;cursor:pointer;transition:transform .15s;margin-top:10px}
+.tarot-deck:hover{transform:translateY(-6px)}
+.tarot-deck:active{transform:translateY(0)}
+.tarot-card-back{position:absolute;width:110px;height:170px;border-radius:14px;border:3px solid var(--ink);
+  display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:4px 4px 0 var(--ink);transition:all .15s}
+.tarot-card-back:nth-child(1){background:linear-gradient(135deg,#c8a0e8,#9060c0);top:10px;left:10px;transform:rotate(-6deg)}
+.tarot-card-back:nth-child(2){background:linear-gradient(135deg,#d4b8f8,#a878d8);top:5px;left:5px;transform:rotate(-2deg)}
+.tarot-card-back:nth-child(3){background:linear-gradient(135deg,#e8d0ff,#c090e8);top:0;left:0;transform:rotate(2deg)}
+.tarot-deck.drawing .tarot-card-back:nth-child(3){animation:cardDraw .8s ease forwards}
+@keyframes cardDraw{0%{transform:rotate(2deg)}30%{transform:rotate(-15deg) translateY(-30px) translateX(20px)}60%{transform:rotate(10deg) translateY(-60px) translateX(-10px)}100%{transform:rotate(0deg) translateY(-80px) scale(1.1);opacity:0}}
+.tarot-label{position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);font-size:13px;font-weight:900;color:var(--ink);white-space:nowrap}
+
+/* loading */
+.loading{display:none;flex-direction:column;align-items:center;gap:12px;margin:20px 0}
+.loading.show{display:flex}
+.dots{display:flex;gap:6px}
+.dots span{width:10px;height:10px;border-radius:50%;background:var(--gold);animation:dotBounce .8s ease infinite}
+.dots span:nth-child(2){animation-delay:.15s;background:var(--purple)}
+.dots span:nth-child(3){animation-delay:.3s;background:#ff9999}
+@keyframes dotBounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1.2);opacity:1}}
+.loading p{font-size:13px;color:#aaa}
+
+/* 结果区 */
+.result-section{display:none;flex-direction:column;align-items:center;gap:0}
+.result-section.show{display:flex;animation:fadeUp .5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* 六爻卦象 */
+.hex-display{display:flex;flex-direction:column;align-items:center;margin-bottom:20px}
+.hex-name{font-size:20px;font-weight:900;margin-bottom:4px}
+.hex-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.yao-lines{display:flex;flex-direction:column-reverse;gap:9px;align-items:center}
+.yao-row{display:flex;align-items:center;gap:10px;opacity:0;transform:translateX(-14px)}
+.yao-row.appear{animation:yaoIn .3s ease forwards}
+@keyframes yaoIn{to{opacity:1;transform:translateX(0)}}
+.yao-num{font-size:10px;color:#ccc;width:14px;text-align:right}
+.yao-yang{width:88px;height:11px;background:var(--gold);border-radius:6px;box-shadow:0 2px 8px rgba(245,200,66,.5)}
+.yao-yin-l,.yao-yin-r{width:38px;height:11px;background:var(--purple);border-radius:6px;box-shadow:0 2px 8px rgba(200,160,232,.5)}
+.yao-gap{width:12px}
+.yao-change{font-size:13px;color:#ff6b6b;margin-left:2px}
+
+/* 塔罗牌展示 */
+.tarot-reveal{width:160px;height:240px;border-radius:18px;border:3px solid var(--ink);
+  box-shadow:6px 6px 0 var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  margin-bottom:24px;animation:cardFlip .6s ease;position:relative;overflow:hidden}
+@keyframes cardFlip{0%{transform:rotateY(90deg) scale(.8);opacity:0}100%{transform:rotateY(0deg) scale(1);opacity:1}}
+.tarot-reveal-num{font-size:10px;color:rgba(255,255,255,.7);letter-spacing:2px}
+.tarot-reveal-svg{width:90px;height:90px}
+.tarot-reveal-name{font-size:16px;font-weight:900;color:#fff;text-align:center;text-shadow:0 2px 4px rgba(0,0,0,.3)}
+.tarot-reveal-keyword{font-size:11px;color:rgba(255,255,255,.8);letter-spacing:1px}
+
+/* 食物卡片 */
+.food-card{width:100%;border-radius:24px;border:3px solid var(--ink);box-shadow:7px 7px 0 var(--ink);overflow:hidden;animation:fadeUp .5s ease .7s both}
+.food-header{padding:28px 24px 20px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.food-img-wrap{width:120px;height:120px;border-radius:50%;border:3px solid rgba(255,255,255,.6);
+  box-shadow:0 4px 20px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.3);overflow:hidden}
+.food-img-wrap svg{width:100px;height:100px}
+.food-name{font-size:28px;font-weight:900;color:#fff;text-align:center;text-shadow:0 2px 6px rgba(0,0,0,.2)}
+.food-cuisine{font-size:12px;color:rgba(255,255,255,.85);letter-spacing:2px}
+.food-tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.food-tag{padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;
+  background:rgba(255,255,255,.25);color:#fff;border:1.5px solid rgba(255,255,255,.5)}
+.food-body{background:#fff;padding:20px 24px 24px;display:flex;flex-direction:column;gap:14px}
+.block{background:#fafafa;border-radius:14px;padding:14px 16px;border:1.5px solid #f0f0f0}
+.block-title{font-size:11px;font-weight:900;color:var(--muted);letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.block-dot{width:8px;height:8px;border-radius:2px;display:inline-block;flex-shrink:0}
+.block-body{font-size:14px;line-height:1.9;color:#333}
+.yi-ji{display:flex;gap:10px}
+.yi,.ji{flex:1;border-radius:12px;padding:12px;text-align:center}
+.yi{background:#edfaf3;border:1.5px solid #b8e8cc}
+.ji{background:#fff0f0;border:1.5px solid #f8c8c8}
+.yi-ji-label{font-size:10px;font-weight:900;letter-spacing:2px;margin-bottom:5px}
+.yi .yi-ji-label{color:#3dba7e}
+.ji .yi-ji-label{color:#e05c5c}
+.yi-ji-val{font-size:13px;font-weight:700;color:#333;line-height:1.6}
+.verse{border-radius:14px;padding:16px 18px;text-align:center;font-size:15px;font-weight:700;line-height:1.9;color:#fff;box-shadow:3px 3px 0 rgba(0,0,0,.1)}
+
+/* 按钮 */
+.action-row{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+.btn{padding:14px 32px;border-radius:999px;border:2.5px solid var(--ink);font-size:14px;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:all .12s;display:inline-flex;align-items:center;gap:6px}
+.btn-dark{background:var(--ink);color:#fff;box-shadow:4px 4px 0 #555}
+.btn-dark:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 #555}
+.btn-dark:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #555}
+.btn-outline{background:transparent;color:var(--ink);box-shadow:4px 4px 0 var(--ink)}
+.btn-outline:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink)}
+.btn-outline:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.footer-note{text-align:center;font-size:11px;color:#ccc;margin-top:32px;line-height:2}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="site-title">
+    <h1>🔮 今天吃什么</h1>
+    <p>占卜今日口腹之缘 · 天机不可泄露</p>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-tarot" onclick="switchMode('tarot')">🃏 塔罗抽牌</button>
+    <button class="mode-tab" id="tab-hex" onclick="switchMode('hex')">🪙 六爻起卦</button>
+  </div>
+
+  <!-- 起卦区 -->
+  <div class="cast-section" id="cast-section">
+    <p class="cast-hint" id="cast-hint">心中默念今日想吃什么<br/>点击牌堆，抽取命运之牌</p>
+
+    <!-- 塔罗牌堆 -->
+    <div class="tarot-deck" id="tarot-deck" onclick="doCast()">
+      <div class="tarot-card-back">✦</div>
+      <div class="tarot-card-back">✦</div>
+      <div class="tarot-card-back">✦</div>
+      <div class="tarot-label">点击抽牌</div>
+    </div>
+
+    <!-- 铜钱按钮（隐藏） -->
+    <button class="coin-btn" id="coin-btn" style="display:none" onclick="doCast()">
+      <span class="coin-icon">🪙</span>
+      <span class="coin-label">起 卦</span>
+    </button>
+  </div>
+
+  <!-- loading -->
+  <div class="loading" id="loading">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <p id="loading-text">天机推演中…</p>
+  </div>
+
+  <!-- 结果区 -->
+  <div class="result-section" id="result-section">
+
+    <!-- 六爻卦象（按需显示） -->
+    <div class="hex-display" id="hex-display" style="display:none">
+      <div class="hex-name" id="hex-name"></div>
+      <div class="hex-sub" id="hex-sub"></div>
+      <div class="yao-lines" id="yao-lines"></div>
+    </div>
+
+    <!-- 塔罗牌展示（按需显示） -->
+    <div id="tarot-display" style="display:none">
+      <div class="tarot-reveal" id="tarot-reveal"></div>
+    </div>
+
+    <!-- 食物卡片 -->
+    <div class="food-card" id="food-card">
+      <div class="food-header" id="food-header">
+        <div class="food-img-wrap" id="food-img-wrap"></div>
+        <div class="food-name" id="food-name"></div>
+        <div class="food-cuisine" id="food-cuisine"></div>
+        <div class="food-tags" id="food-tags"></div>
+      </div>
+      <div class="food-body">
+        <div class="block">
+          <div class="block-title"><span class="block-dot" id="block-dot"></span><span id="block-title-text">卦象解读</span></div>
+          <div class="block-body" id="block-body"></div>
+        </div>
+        <div class="yi-ji">
+          <div class="yi"><div class="yi-ji-label">今日宜</div><div class="yi-ji-val" id="yi-val"></div></div>
+          <div class="ji"><div class="yi-ji-label">今日忌</div><div class="yi-ji-val" id="ji-val"></div></div>
+        </div>
+        <div class="verse" id="verse"></div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-outline" onclick="resetAll()">🔄 再算一次</button>
+    </div>
+    <div class="footer-note">卦象仅供娱乐 · 吃好才是真道理<br/>愿你今日口腹大满足 🍜</div>
+  </div>
+
+</div>
+<script>
+// ══════════════════════════════════════════════
+//  全局菜品大库（100+ 种）
+//  每道菜：name / cuisine / tags / desc / yi / ji / verse
+// ══════════════════════════════════════════════
+const ALL_FOODS = [
+  // ── 中式面食 ──
+  { name:"螺蛳粉", cuisine:"广西·柳州风味", tags:["臭香臭香","重口味","上瘾预警"],
+    desc:"螺蛳粉的臭香之气，正是今日你需要的勇气——看似不妙，实则暗藏惊喜。一碗下肚，酸辣鲜香，今日所有烦恼随汤汁一扫而空。",
+    yi:"大口嗦粉", ji:"在意他人眼光", verse:"「臭香臭香螺蛳粉，今日缘分深似海」" },
+  { name:"重庆小面", cuisine:"重庆·江湖风味", tags:["麻辣鲜香","江湖气息","灵魂早餐"],
+    desc:"今日你的运势如同这碗面——看起来红彤彤，实则充满活力。麻辣鲜香，一口下去，整个人都精神了，今日行事宜大胆果断。",
+    yi:"麻辣到底", ji:"委曲求全", verse:"「一碗小面辣翻天，今日运势红似火」" },
+  { name:"兰州拉面", cuisine:"甘肃·西北风味", tags:["一清二白","筋道弹牙","国民早餐"],
+    desc:"一清二白三红四绿五黄，五行俱全，今日运势均衡，诸事顺遂。大口吃面，元气满满！",
+    yi:"大口吃面", ji:"挑三拣四", verse:"「一碗拉面五行全，今日运势稳如山」" },
+  { name:"老北京炸酱面", cuisine:"北京·经典面食", tags:["酱香浓郁","经典厚重","京味十足"],
+    desc:"炸酱面的酱料需要慢慢炒制，等待是一种智慧。今日宜沉住气，等待最好的时机，必有收获。",
+    yi:"沉住气", ji:"冒进急躁", verse:"「炸酱面里藏乾坤，今日等待运势旺」" },
+  { name:"阳春面", cuisine:"苏帮·面食经典", tags:["清淡","禅意","简单"],
+    desc:"一碗阳春面，清汤寡水，葱花点缀，看似简单，却是最深刻的智慧——少即是多。今日宜独自享用，在清淡中找到内心的宁静。",
+    yi:"独自享用", ji:"喧嚣聚餐", verse:"「一碗清汤见本心，今日静心最养神」" },
+  { name:"云南过桥米线", cuisine:"云南·蒙自风味", tags:["汤鲜料足","仪式感满满","云南情怀"],
+    desc:"相传妻子为丈夫送饭过桥，以鸡油保温，今日你的运势充满温情与智慧。仪式感满满的一碗米线，今日宜珍惜身边的人。",
+    yi:"珍惜情缘", ji:"忽视身边人", verse:"「过桥米线情意长，今日温情暖人心」" },
+  { name:"酸辣粉", cuisine:"川渝·街头小吃", tags:["酸辣","刺激","草根"],
+    desc:"酸辣粉的酸辣正是对艰辛的最好诠释。今日宜接受挑战，酸中有辣，辣中有香，苦尽甘来！",
+    yi:"接受挑战", ji:"半途而废", verse:"「酸辣粉里藏玄机，今日艰辛后运旺」" },
+  { name:"日式拉面", cuisine:"日本·博多风味", tags:["浓郁豚骨","温暖治愈","深夜食堂"],
+    desc:"浓郁的豚骨汤底，弹牙的面条，半熟溏心蛋，今日适合一个人静静享用，在温暖中找回内心的平静。",
+    yi:"独处充电", ji:"人多嘈杂", verse:"「豚骨浓汤暖夜色，今日月光照心田」" },
+  { name:"日式荞麦面", cuisine:"日本·清淡料理", tags:["清淡","节制","养生"],
+    desc:"一碗清淡的荞麦面，配上清爽的蘸汁，不过分，不将就，恰到好处的满足。今日宜清心寡欲，运势自然向好。",
+    yi:"清淡饮食", ji:"大吃大喝", verse:"「荞麦一碗节制道，今日清心运自高」" },
+  { name:"热干面", cuisine:"湖北·武汉风味", tags:["芝麻酱香","武汉早餐","过早必备"],
+    desc:"热干面是武汉人的灵魂早餐，芝麻酱的香气让人精神一振。今日宜趁热出发，不要犹豫，行动力就是你最大的优势。",
+    yi:"趁热出发", ji:"犹豫不决", verse:"「热干面香武汉魂，今日行动运势旺」" },
+  { name:"担担面", cuisine:"四川·成都风味", tags:["麻辣鲜香","街头担子","成都记忆"],
+    desc:"担担面挑着担子走街串巷，正如今日你的运势——脚踏实地，一步一个脚印，终将走出属于自己的路。",
+    yi:"脚踏实地", ji:"好高骛远", verse:"「担担面香步步稳，今日踏实福自来」" },
+
+  // ── 中式主食 ──
+  { name:"北京烤鸭", cuisine:"北京·宫廷风味", tags:["皮脆肉嫩","仪式感满满","人生享受"],
+    desc:"皮脆肉嫩，配以薄饼葱丝，一口下去尽是人间至味。今日你气场强大，宜犒劳自己，大事可成。",
+    yi:"犒劳自己", ji:"省吃俭用", verse:"「金皮玉肉帝王鸭，今日气场无人挡」" },
+  { name:"东坡肉", cuisine:"浙江·杭帮菜", tags:["肥而不腻","文人情怀","慢生活"],
+    desc:"苏东坡曰「慢著火，少著水，火候足时它自美」——今日凡事不可急躁，慢工出细活，如这方肉般，耐心等待，必有甘甜。",
+    yi:"慢慢来", ji:"急于求成", verse:"「慢火细炖东坡肉，今日耐心福气来」" },
+  { name:"小笼包", cuisine:"上海·江南风味", tags:["皮薄汤多","精致小巧","上海情怀"],
+    desc:"皮薄如纸，汤汁丰盈，一口咬下去，幸福感爆棚。今日你的运势如同这汤汁——满满当当，溢出来都是好事，宜与人分享喜悦。",
+    yi:"分享快乐", ji:"独吞好事", verse:"「皮薄汤鲜小笼包，今日喜事满满来」" },
+  { name:"煎饼果子", cuisine:"天津·街头小吃", tags:["早餐之王","薄脆加蛋","天津魂"],
+    desc:"薄薄的面皮，金黄的鸡蛋，脆脆的薄脆，抹上甜面酱，卷起来就是一天的好心情。今日宜随心所欲，快乐最重要。",
+    yi:"随心而行", ji:"过度计划", verse:"「煎饼果子卷起来，今日随心最自在」" },
+  { name:"糖醋里脊", cuisine:"鲁菜·经典名菜", tags:["酸甜可口","老少皆宜","下饭必备"],
+    desc:"酸甜平衡，外酥里嫩，正如今日运势——先苦后甜，先酸后甜，最终收获满满。遇到困难不要气馁，甜头就在后面。",
+    yi:"先苦后甜", ji:"半途而废", verse:"「酸甜里脊暖胃肠，今日苦尽甘来时」" },
+  { name:"夫妻肺片", cuisine:"四川·成都名菜", tags:["麻辣鲜香","名字吓人","实则美味"],
+    desc:"名字虽吓人，实则是牛肉、牛杂的美妙组合，麻辣鲜香，层次丰富。今日事情表面看起来复杂，实则暗藏惊喜，不要被表象迷惑。",
+    yi:"深入了解", ji:"以貌取人", verse:"「名字吓人味绝佳，今日惊喜藏其中」" },
+  { name:"麻婆豆腐", cuisine:"四川·川菜经典", tags:["麻辣烫嫩","下饭神器","川菜之魂"],
+    desc:"麻、辣、烫、嫩、鲜，五味俱全，今日你的热情如这锅红油般滚烫。遇事不要退缩，像豆腐一样，外柔内嫩，以柔克刚。",
+    yi:"热情似火", ji:"冷漠待人", verse:"「麻辣豆腐暖人心，今日热情感动天」" },
+  { name:"新疆大盘鸡", cuisine:"新疆·西域风味", tags:["豪迈大气","土豆鸡肉","西域风情"],
+    desc:"豪迈的大盘，鲜嫩的鸡肉，软糯的土豆，宽厚的皮带面，今日你的气场如同西域大漠——广阔无边，豪迈大气，遇事不退缩。",
+    yi:"豪迈前行", ji:"畏首畏尾", verse:"「大盘鸡香飘西域，今日豪气冲云天」" },
+  { name:"佛跳墙", cuisine:"福建·闽菜之王", tags:["食材丰富","滋补养生","人生巅峰"],
+    desc:"鲍鱼、海参、鱼翅、干贝，汇聚天下珍馐，香气四溢，连佛祖都忍不住跳墙来吃。今日你的运势达到顶峰，宜大胆追求最好的。",
+    yi:"追求极致", ji:"将就凑合", verse:"「珍馐汇聚佛跳墙，今日运势登顶峰」" },
+  { name:"烤全羊", cuisine:"新疆·西域风味", tags:["豪迈","大气","肉食天花板"],
+    desc:"孜然飘香，外焦里嫩，今日你的胃有无穷力量。大口吃肉，豪气冲天，今日运势如同这只羊——整个都是你的！",
+    yi:"大口吃肉", ji:"节食减肥", verse:"「力拔山兮气盖世，今日吃肉最相宜」" },
+  { name:"广式早茶", cuisine:"广东·粤式茶楼", tags:["虾饺烧卖","一盅两件","慢生活"],
+    desc:"虾饺、烧卖、叉烧包、蛋挞，一盅两件，慢慢品味，今日宜放慢节奏，享受生活的美好，不要急，好东西值得等待。",
+    yi:"慢慢享受", ji:"狼吞虎咽", verse:"「一盅两件早茶香，今日悠然自得乐」" },
+  { name:"皮蛋瘦肉粥", cuisine:"粤式·粥品经典", tags:["治愈","温暖","内省"],
+    desc:"一碗热腾腾的皮蛋瘦肉粥，绵软细腻，今日宜静心养神，在温暖中思考，积蓄能量，等待时机。",
+    yi:"静心养神", ji:"焦躁冒进", verse:"「皮蛋粥里见真心，今日静心运自好」" },
+  { name:"南瓜粥", cuisine:"粤式·养生粥品", tags:["温暖","滋养","朴实"],
+    desc:"一碗金黄的南瓜粥，甜糯绵软，如同大地母亲的怀抱，今日宜静心养神，运势平稳向好。",
+    yi:"静心养神", ji:"急功近利", verse:"「南瓜粥暖坤德厚，今日静心福自有」" },
+  { name:"白切鸡", cuisine:"广东·粤菜经典", tags:["鲜嫩","原味","粤菜精髓"],
+    desc:"白切鸡以最简单的方式呈现食材本味，皮滑肉嫩，蘸上姜葱酱，今日宜回归本真，不需要复杂，做真实的自己。",
+    yi:"回归本真", ji:"过度包装", verse:"「白切鸡鲜见本味，今日清明自然来」" },
+  { name:"海南鸡饭", cuisine:"东南亚·经典料理", tags:["阳光","清爽","满足"],
+    desc:"鸡肉嫩滑，米饭香浓，配上姜葱酱，简单而完美，正如今日你的运势——明朗而充实，诸事皆顺！",
+    yi:"享受当下", ji:"杞人忧天", verse:"「海南鸡饭太阳照，今日运势节节高」" },
+  { name:"梅菜扣肉", cuisine:"客家·传统名菜", tags:["咸香浓郁","下饭神器","客家情怀"],
+    desc:"梅菜的咸香与五花肉的肥美完美融合，今日宜以包容之心对待一切，刚柔并济，方能成就大事。",
+    yi:"包容万物", ji:"斤斤计较", verse:"「梅菜扣肉香飘远，今日包容福自来」" },
+  { name:"红烧肉", cuisine:"本帮菜·经典", tags:["肥瘦相间","色泽红亮","入口即化"],
+    desc:"肥瘦相间，火候绵长，色泽红亮，入口即化，今日吃饱喝足，运势如日中天！",
+    yi:"犒劳自己", ji:"委屈将就", verse:"「红烧一块气势足，今日吃饱万事顺」" },
+  { name:"糖醋排骨", cuisine:"本帮菜·经典", tags:["酸甜","和解","平衡"],
+    desc:"糖醋排骨酸甜平衡，正如今日你需要用甜蜜化解争端，以柔克刚，方为上策。",
+    yi:"以柔克刚", ji:"针锋相对", verse:"「糖醋排骨甜蜜来，今日甜蜜化争端」" },
+
+  // ── 火锅系列 ──
+  { name:"四川麻辣火锅", cuisine:"四川·重庆风味", tags:["麻辣鲜香","人间至味","社交神器"],
+    desc:"红汤翻滚，麻辣鲜香，今日你的热情如同这锅底——沸腾不止，激情四射。呼朋唤友，围炉而坐，今日的快乐指数爆表！",
+    yi:"热情似火", ji:"独自发呆", verse:"「红汤翻滚麻辣香，今日热情燃四方」" },
+  { name:"潮汕牛肉火锅", cuisine:"广东·潮汕风味", tags:["鲜嫩无比","涮10秒刚好","牛肉天花板"],
+    desc:"清澈的骨汤，新鲜的牛肉，涮10秒刚刚好，鲜嫩无比。今日宜把握时机，不要过度，恰到好处才是最高境界。",
+    yi:"把握时机", ji:"过犹不及", verse:"「鲜嫩牛肉涮十秒，今日时机恰到好」" },
+  { name:"北京涮羊肉", cuisine:"北京·铜锅涮肉", tags:["铜锅炭火","羊肉鲜嫩","老北京情怀"],
+    desc:"铜锅沸腾，羊肉鲜嫩，在热气腾腾中增进感情，今日贵人相助，宜与亲近之人共享美食。",
+    yi:"亲友聚餐", ji:"独自将就", verse:"「铜锅涮肉情意浓，今日团聚福绵延」" },
+  { name:"韩式部队锅", cuisine:"韩国·议政府风味", tags:["热闹丰盛","朋友聚餐","包容万象"],
+    desc:"泡面、午餐肉、年糕、芝士，各种食材和谐共处，正如今日你的人际关系——包容多元，热闹非凡，宜呼朋唤友，共享美食。",
+    yi:"广结善缘", ji:"独来独往", verse:"「百味汇聚部队锅，今日缘分聚四方」" },
+  { name:"麻辣香锅", cuisine:"川菜·街头美食", tags:["刺激","过瘾","热辣"],
+    desc:"麻辣香锅里的每一种食材都在考验你的意志，而你，必将征服它。今日宜挑战自我，突破极限！",
+    yi:"挑战极辣", ji:"肠胃不适时", verse:"「辣意横生力量显，香锅一开运势燃」" },
+  { name:"麻辣小龙虾", cuisine:"湖北·夜宵经典", tags:["热辣","夏日必备","热闹"],
+    desc:"剥壳的过程就是突破的过程，今日宜迎难而上，突破重重阻碍，必有大收获！",
+    yi:"迎难而上", ji:"逃避困难", verse:"「小龙虾里藏玄机，今日奋发运无边」" },
+  { name:"铁锅炖", cuisine:"东北菜·豪迈风味", tags:["豪迈","大气","统帅"],
+    desc:"铁锅炖将各种食材统一在一口大锅中，纪律严明，各司其职，今日宜统筹全局，必有大成。",
+    yi:"统筹安排", ji:"各自为政", verse:"「铁锅炖里藏乾坤，今日统帅运势旺」" },
+
+  // ── 日韩料理 ──
+  { name:"寿喜烧", cuisine:"日本·关东风味", tags:["甜咸交织","冬日暖心","仪式感"],
+    desc:"甜咸交织的酱汁，嫩滑的牛肉，配上生鸡蛋的丝滑，今日你的运势如同这锅汤底，越煮越香，越来越好！",
+    yi:"享受当下", ji:"患得患失", verse:"「甜咸寿喜暖人心，今日星光照前路」" },
+  { name:"韩式炸鸡", cuisine:"韩国·街头美食", tags:["外酥里嫩","配啤酒绝了","快乐源泉"],
+    desc:"外皮酥脆，内里鲜嫩，蘸上甜辣酱，配一杯冰啤酒，今日所有压力烟消云散。运势如炸鸡般，越炸越香，越来越好！",
+    yi:"放飞自我", ji:"节制饮食", verse:"「酥脆炸鸡配啤酒，今日快乐无边界」" },
+  { name:"天妇罗", cuisine:"日本·江户风味", tags:["轻盈酥脆","食材新鲜","精致优雅"],
+    desc:"轻盈的面衣，新鲜的食材，简单而纯粹，正如今日运势——不需要复杂，回归本质，做真实的自己，自然散发光芒。",
+    yi:"回归本真", ji:"过度包装", verse:"「轻盈天妇罗入口，今日清明见本心」" },
+  { name:"日式定食", cuisine:"日本·精致料理", tags:["精致","均衡","仪式感"],
+    desc:"日式定食的每一格都恰到好处——米饭、味噌汤、主菜、小菜，完美的平衡之道。今日宜认真对待每一件事，必有收获。",
+    yi:"认真对待", ji:"随便应付", verse:"「定食一盘见正义，今日饮食有章法」" },
+  { name:"日式茶泡饭", cuisine:"日本·禅意料理", tags:["禅意","清淡","治愈"],
+    desc:"热茶浇在白饭上，配几片腌菜，这是一种修行，也是今日最适合你的饮食哲学。在简单中感受生命的美好。",
+    yi:"静心独处", ji:"热闹场合", verse:"「茶香入饭禅意深，今日静心福自临」" },
+  { name:"韩式石锅拌饭", cuisine:"韩国·传统料理", tags:["色彩丰富","营养均衡","锅巴香脆"],
+    desc:"五颜六色的蔬菜，香喷喷的锅巴，拌匀之后每一口都是惊喜。今日宜将生活中的各种元素融合在一起，创造属于你的精彩。",
+    yi:"融合创新", ji:"固守一隅", verse:"「石锅拌饭色彩美，今日融合运势旺」" },
+  { name:"日式寿司", cuisine:"日本·江户前风味", tags:["精致","新鲜","匠心"],
+    desc:"每一贯寿司都是极致的工艺，今日你的一切努力都将得到完美的回报，精益求精，必有大成。",
+    yi:"精益求精", ji:"粗心大意", verse:"「寿司一贯匠心显，今日精致运无边」" },
+  { name:"韩式烤肉", cuisine:"韩国·烤肉经典", tags:["活力","热闹","满足"],
+    desc:"五花肉、牛肉、鸡肉，在炭火上滋滋作响，用满满的活力迎接美好的一天！今日宜积极行动，运势大吉！",
+    yi:"积极行动", ji:"消极懈怠", verse:"「烤肉飘香运势旺，今日活力满四方」" },
+  { name:"日式拉面（味噌）", cuisine:"日本·北海道风味", tags:["浓郁味噌","暖胃","北海道情怀"],
+    desc:"味噌的醇厚，玉米的甜蜜，黄油的香浓，今日你的运势如同这碗汤——层次丰富，越品越有味道。",
+    yi:"细细品味", ji:"囫囵吞枣", verse:"「味噌拉面暖人心，今日层次运自深」" },
+
+  // ── 东南亚料理 ──
+  { name:"越南河粉", cuisine:"越南·河内风味", tags:["清爽鲜美","香草满满","治愈系"],
+    desc:"清澈的骨汤，洁白的米粉，新鲜的香草，简单纯粹，今日宜放慢脚步，清空杂念，在清淡中找到真正的满足。",
+    yi:"慢下来", ji:"急功近利", verse:"「清汤河粉香草鲜，今日静心见清明」" },
+  { name:"泰式绿咖喱", cuisine:"泰国·曼谷风味", tags:["椰香浓郁","香料丰富","异域风情"],
+    desc:"椰奶的甘甜，青咖喱的辛香，各种香料的层次，今日你的内心力量强大，能够驾驭复杂局面，如同这道菜——看似复杂，实则和谐。",
+    yi:"掌控全局", ji:"优柔寡断", verse:"「椰香咖喱异域情，今日力量无人挡」" },
+  { name:"新加坡肉骨茶", cuisine:"新加坡·福建移民风味", tags:["药香浓郁","滋补养生","南洋情怀"],
+    desc:"胡椒、当归、枸杞，药材与猪骨的完美融合，滋补而不腻，今日宜静心养神，积蓄能量，如这锅汤般，慢慢熬出精华。",
+    yi:"养精蓄锐", ji:"消耗过度", verse:"「药香肉骨茶飘香，今日滋补运势旺」" },
+  { name:"越南春卷", cuisine:"越南·清爽料理", tags:["清爽","节制","精致"],
+    desc:"越南春卷将各种食材包裹在薄薄的米纸中，清爽不油腻，正是今日你需要的饮食哲学。适量而止，恰到好处。",
+    yi:"清淡为主", ji:"油腻重口", verse:"「春卷一卷见节制，今日清爽福自至」" },
+  { name:"泰式冬阴功汤", cuisine:"泰国·经典汤品", tags:["酸辣鲜香","香茅柠檬叶","异域风情"],
+    desc:"香茅、柠檬叶、南姜，酸辣鲜香，今日你的感官将被彻底唤醒。遇到困难不要退缩，像这碗汤一样，越煮越香！",
+    yi:"感官全开", ji:"麻木不仁", verse:"「冬阴功汤酸辣鲜，今日感官运势燃」" },
+  { name:"泰式芒果糯米饭", cuisine:"泰国·甜品经典", tags:["甜蜜","异域","治愈"],
+    desc:"金黄的芒果配上椰香糯米，每一口都是对美好生活的向往。今日运势如星光般闪耀，甜蜜好事接连而来！",
+    yi:"享受甜蜜", ji:"自我苛责", verse:"「芒果糯米星光下，今日甜蜜福到家」" },
+  { name:"印度咖喱鸡", cuisine:"印度·北印度风味", tags:["香料复杂","浓郁","异域"],
+    desc:"十几种香料的完美融合，每一口都是复杂而迷人的层次。今日宜拥抱复杂，在纷繁中找到属于你的节奏。",
+    yi:"拥抱复杂", ji:"逃避现实", verse:"「咖喱香料十八味，今日复杂运自美」" },
+
+  // ── 西式料理 ──
+  { name:"那不勒斯披萨", cuisine:"意大利·那不勒斯风味", tags:["芝士拉丝","番茄酸甜","意式浪漫"],
+    desc:"芝士拉丝，番茄酸甜，罗勒清香，三者完美融合，正如今日你的感情运势——甜蜜而充实，宜与心爱之人共享美食。",
+    yi:"浪漫约会", ji:"独自将就", verse:"「芝士拉丝情意浓，今日爱意满人间」" },
+  { name:"法式洋葱汤", cuisine:"法国·巴黎风味", tags:["浓郁醇厚","芝士焗烤","冬日暖胃"],
+    desc:"慢炒至焦糖色的洋葱，浓郁的牛骨汤，厚厚的芝士焗烤，每一口都是时间的馈赠。今日宜稳重行事，厚积薄发。",
+    yi:"稳扎稳打", ji:"急于表现", verse:"「焦糖洋葱汤醇厚，今日沉稳自有威」" },
+  { name:"西班牙海鲜饭", cuisine:"西班牙·瓦伦西亚风味", tags:["色彩鲜艳","海鲜丰盛","节日气氛"],
+    desc:"藏红花染就的金黄米饭，虾蟹贝类的鲜美，今日你的运势如同这盘饭——色彩鲜艳，丰盛热闹，宜大展身手，光芒四射。",
+    yi:"大展身手", ji:"低调隐忍", verse:"「金黄海鲜饭飘香，今日光芒照四方」" },
+  { name:"芝士汉堡", cuisine:"美式·快餐经典", tags:["罪恶","满足","放纵"],
+    desc:"双层牛肉饼、厚切芝士、培根、特制酱料——这是一次美味的「堕落」，但今日你值得！放下所有顾虑，尽情享用！",
+    yi:"放纵一次", ji:"假装自律", verse:"「恶魔今日来相邀，芝士汉堡罪恶好」" },
+  { name:"奶油意面", cuisine:"意大利·经典料理", tags:["罪恶","浓郁","诱惑"],
+    desc:"浓郁的奶油意面，满满的芝士，这是今日最甜蜜的「罪恶」，请尽情享用！你已经努力太久了！",
+    yi:"享受美食", ji:"过度节制", verse:"「奶油意面香气浓，今日放纵无需慌」" },
+  { name:"铁板牛排", cuisine:"西餐·经典", tags:["力量","蛋白质","满足感"],
+    desc:"一块滋滋作响的铁板牛排，七分熟，配黑椒汁，今日你就是餐桌上的王者，没有什么能阻挡你。",
+    yi:"犒劳自己", ji:"委屈将就", verse:"「铁板烧出今日运，牛排入口气如虹」" },
+  { name:"法式可颂", cuisine:"法国·烘焙经典", tags:["酥脆层叠","黄油香浓","早餐仪式感"],
+    desc:"一层一层酥脆的可颂，黄油的香气在口中化开，今日宜享受生活的精致，每一个细节都值得用心对待。",
+    yi:"享受精致", ji:"粗枝大叶", verse:"「可颂层层酥脆香，今日精致运自旺」" },
+  { name:"地中海沙拉", cuisine:"地中海·健康料理", tags:["清爽","健康","平衡"],
+    desc:"地中海饮食是世界公认最均衡的饮食方式，今日就用这份沙拉来犒劳你的身体，找到完美的平衡。",
+    yi:"均衡饮食", ji:"暴饮暴食", verse:"「地中海风今日来，节制之食最自在」" },
+  { name:"墨西哥卷饼", cuisine:"墨西哥·街头美食", tags:["热辣","丰盛","异域"],
+    desc:"玉米饼包裹着牛肉、豆子、芝士、莎莎酱，每一口都是热情洋溢的墨西哥风情。今日宜热情奔放，不要压抑自己！",
+    yi:"热情奔放", ji:"压抑自我", verse:"「墨西哥卷热情来，今日奔放运势开」" },
+
+  // ── 中式小吃 ──
+  { name:"臭豆腐", cuisine:"湖南·长沙风味", tags:["闻着臭吃着香","长沙必吃","勇者游戏"],
+    desc:"臭豆腐经历发酵的「死亡」，却在油锅中获得新生，外焦里嫩，臭中带香——这就是转化的奇迹。今日宜勇于尝试，突破自我！",
+    yi:"勇于尝试", ji:"因噎废食", verse:"「臭香臭香豆腐块，今日勇者得惊喜」" },
+  { name:"糖葫芦", cuisine:"北方·传统小吃", tags:["酸甜脆爽","童年记忆","冬日限定"],
+    desc:"酸甜的山楂，晶莹的糖衣，一串在手，童年的快乐瞬间涌来。今日宜保持童心，用最纯粹的眼光看世界，好运自然来。",
+    yi:"保持童心", ji:"过于世故", verse:"「糖葫芦红映童年，今日纯真好运来」" },
+  { name:"爆辣串串香", cuisine:"川式·串串经典", tags:["突破","爆发","刺激"],
+    desc:"今日就要打破常规，来一串爆辣串串香，让辣意冲破你的味觉防线，迎来全新的觉醒！今日宜突破自我，迎接变化！",
+    yi:"突破自我", ji:"墨守成规", verse:"「串串一口运势开，今日突破天地间」" },
+  { name:"生煎包", cuisine:"上海·街头小吃", tags:["底脆皮薄","汤汁丰盈","上海情怀"],
+    desc:"底部金黄酥脆，顶部撒满芝麻葱花，一口咬下去汤汁四溢。今日宜外刚内柔，表面强硬，内心温柔，必能成事。",
+    yi:"外刚内柔", ji:"表里不一", verse:"「生煎包底脆皮薄，今日外刚内柔好」" },
+  { name:"驴打滚", cuisine:"北京·传统糕点", tags:["软糯香甜","豆沙馅料","老北京味"],
+    desc:"驴打滚在黄豆粉里滚一圈，裹满了香气，今日宜广泛涉猎，多方尝试，每一次「滚动」都是新的收获。",
+    yi:"广泛尝试", ji:"固守一隅", verse:"「驴打滚里藏玄机，今日广泛运自旺」" },
+  { name:"烤冷面", cuisine:"东北·街头小吃", tags:["酸甜辣","东北情怀","夜市必备"],
+    desc:"烤冷面是东北夜市的灵魂，酸甜辣的完美融合，今日宜放开心怀，享受生活的多种滋味，不要局限自己。",
+    yi:"放开心怀", ji:"局限自我", verse:"「烤冷面香夜市情，今日放开运势旺」" },
+  { name:"肉夹馍", cuisine:"陕西·西安风味", tags:["肉香饼脆","西安必吃","历史底蕴"],
+    desc:"肉夹馍是中国最古老的「汉堡」，历经千年依然受人喜爱。今日宜以经典为基础，在传统中寻找创新，必有大成。",
+    yi:"守正创新", ji:"固步自封", verse:"「肉夹馍香千年味，今日守正运自来」" },
+  { name:"羊肉泡馍", cuisine:"陕西·西安风味", tags:["豪迈","暖胃","西北风"],
+    desc:"掰馍入汤，羊肉鲜嫩，汤底浓郁，今日宜大口吃，大口喝，豪气冲天！",
+    yi:"豪爽大气", ji:"扭扭捏捏", verse:"「泡馍一碗豪气显，今日豪迈福绵延」" },
+  { name:"葱油饼", cuisine:"上海·传统小吃", tags:["层次分明","葱香扑鼻","朴实"],
+    desc:"葱油饼层层叠叠，葱香扑鼻，看似朴实，却蕴含无穷的层次。今日宜深入挖掘，表面之下必有惊喜。",
+    yi:"深入挖掘", ji:"浅尝辄止", verse:"「葱油饼香层层叠，今日深挖运自好」" },
+
+  // ── 甜品系列 ──
+  { name:"杨枝甘露", cuisine:"香港·甜品经典", tags:["芒果椰奶","清甜解暑","港式风情"],
+    desc:"芒果的甜蜜，椰奶的香浓，西柚的清新，三者交融，今日你的运势如同这碗甜品——甜蜜而清爽，好事接连而来。",
+    yi:"享受甜蜜", ji:"苦苦挣扎", verse:"「芒果椰奶甘露甜，今日好事接连来」" },
+  { name:"提拉米苏", cuisine:"意大利·威尼斯风味", tags:["带我走","咖啡可可","浪漫甜蜜"],
+    desc:"意大利语「带我走」，咖啡的苦涩与马斯卡彭的甜蜜完美融合。今日感情运势极佳，宜表达心意，甜蜜时刻就在眼前。",
+    yi:"勇敢表白", ji:"犹豫不决", verse:"「提拉米苏带我走，今日爱意满心头」" },
+  { name:"月饼", cuisine:"中式·传统糕点", tags:["月亮","思念","传统"],
+    desc:"莲蓉蛋黄或五仁，每一口都是对美好时光的回忆与对未来的期许。今日宜怀旧感恩，珍惜当下。",
+    yi:"怀旧感恩", ji:"急功近利", verse:"「月亮高悬月饼香，今日思念化吉祥」" },
+  { name:"汤圆", cuisine:"中式·传统甜品", tags:["圆满","团圆","甜蜜"],
+    desc:"一碗热腾腾的汤圆，芝麻或花生馅，甜蜜软糯，今日宜与家人共享，感受团圆的温暖，运势圆满向好。",
+    yi:"家人团聚", ji:"独自漂泊", verse:"「汤圆一碗月光照，今日团圆福自到」" },
+  { name:"抹茶冰淇淋", cuisine:"日式·甜品经典", tags:["梦幻","清冷","月色"],
+    desc:"抹茶冰淇淋的清冷苦甜，如同月光般清冷而迷人，今日跟随直觉，相信自己的感觉，必有收获。",
+    yi:"相信直觉", ji:"过度理性", verse:"「抹茶月色今夜凉，直觉引路福绵长」" },
+  { name:"彩虹蛋糕", cuisine:"甜品·梦幻系列", tags:["希望","梦幻","甜蜜"],
+    desc:"彩虹蛋糕的每一层都是不同的颜色与味道，就像今日的你，充满了无限可能与美好期待。今日运势如彩虹般绚烂！",
+    yi:"期待美好", ji:"悲观消极", verse:"「彩虹蛋糕星光映，今日希望在心中」" },
+  { name:"芒果班戟", cuisine:"港式·甜品经典", tags:["甜蜜","阳光","幸福"],
+    desc:"芒果班戟金黄饱满，如同太阳般充满活力，每一口都是甜蜜的幸福，今日诸事皆顺，好运连连！",
+    yi:"分享快乐", ji:"独自忧愁", verse:"「芒果班戟太阳甜，今日幸福满人间」" },
+  { name:"草莓大福", cuisine:"日式·和果子", tags:["软糯","甜蜜","春日限定"],
+    desc:"软糯的麻薯包裹着新鲜草莓，甜蜜与微酸的完美平衡，今日宜以温柔之心对待一切，甜蜜好运自然来。",
+    yi:"温柔待人", ji:"强硬蛮干", verse:"「草莓大福春日来，今日温柔福自开」" },
+  { name:"老婆饼", cuisine:"广东·传统糕点", tags:["酥皮冬瓜馅","传统情怀","甜而不腻"],
+    desc:"老婆饼酥皮层层，冬瓜馅甜而不腻，今日宜珍惜身边的人，平淡之中见真情，最朴实的往往是最珍贵的。",
+    yi:"珍惜平淡", ji:"追求刺激", verse:"「老婆饼香情意长，今日珍惜福自旺」" },
+
+  // ── 养生滋补 ──
+  { name:"慢炖牛腩", cuisine:"粤菜·经典", tags:["等待","值得","浓郁"],
+    desc:"慢炖牛腩需要时间，但每一分钟的等待都是值得的。今日宜耐心等待，时机成熟，自然水到渠成。",
+    yi:"耐心等待", ji:"急于求成", verse:"「慢火细炖见真章，今日等待运自旺」" },
+  { name:"老火靓汤", cuisine:"粤菜·养生汤品", tags:["滋补","耐心","养生"],
+    desc:"一锅老火靓汤，煲上四五个小时，是对自己最好的投资与等待。今日宜静心养神，积蓄能量。",
+    yi:"静心养神", ji:"焦躁冒进", verse:"「老火靓汤慢慢煲，今日滋补运自高」" },
+  { name:"枸杞红枣鸡汤", cuisine:"中式·养生汤品", tags:["滋补","养颜","温暖"],
+    desc:"枸杞的甘甜，红枣的温润，鸡肉的鲜美，今日宜好好照顾自己，身体是革命的本钱，养好精神才能大展宏图。",
+    yi:"照顾自己", ji:"透支身体", verse:"「枸杞红枣鸡汤香，今日滋补运势旺」" },
+  { name:"莲藕排骨汤", cuisine:"湖北·传统汤品", tags:["清甜","滋补","家的味道"],
+    desc:"莲藕的清甜与排骨的鲜美相得益彰，今日宜以平和之心面对一切，清甜的生活就在眼前。",
+    yi:"平和处世", ji:"急躁冒进", verse:"「莲藕排骨汤清甜，今日平和福绵延」" },
+
+  // ── 特色地方菜 ──
+  { name:"梅州盐焗鸡", cuisine:"广东·客家风味", tags:["盐香浓郁","皮脆肉嫩","客家情怀"],
+    desc:"盐焗鸡以盐为媒，将鸡肉的鲜美完全锁住，今日宜以简单的方式做事，往往最简单的方法才是最有效的。",
+    yi:"化繁为简", ji:"过度复杂", verse:"「盐焗鸡香客家情，今日简单运自旺」" },
+  { name:"贵州酸汤鱼", cuisine:"贵州·苗族风味", tags:["酸辣鲜香","苗族风情","独特"],
+    desc:"贵州酸汤鱼的酸来自天然发酵，鲜美无比，今日宜以独特的视角看问题，你的与众不同正是你最大的优势。",
+    yi:"独树一帜", ji:"随波逐流", verse:"「酸汤鱼里苗族情，今日独特运势旺」" },
+  { name:"湖南剁椒鱼头", cuisine:"湖南·湘菜经典", tags:["剁椒鲜辣","鱼头嫩滑","湘菜之魂"],
+    desc:"剁椒的鲜辣与鱼头的嫩滑完美融合，今日宜以热情和勇气面对一切挑战，辣意当头，运势大旺！",
+    yi:"热情勇敢", ji:"畏缩退让", verse:"「剁椒鱼头辣意浓，今日热情运势旺」" },
+  { name:"云南汽锅鸡", cuisine:"云南·建水风味", tags:["原汁原味","滋补","云南情怀"],
+    desc:"汽锅鸡以蒸汽为媒，将鸡肉的精华完全提炼，今日宜以最纯粹的方式做事，去除杂质，留下精华。",
+    yi:"去除杂质", ji:"繁文缛节", verse:"「汽锅鸡香云南情，今日纯粹运自旺」" },
+  { name:"广东肠粉", cuisine:"广东·早餐经典", tags:["滑嫩","清爽","粤式情怀"],
+    desc:"肠粉滑嫩爽口，配上酱油和芝麻，简单而美味。今日宜以简单的心态面对复杂的世界，清爽自在，运势自然向好。",
+    yi:"简单自在", ji:"过度复杂", verse:"「肠粉滑嫩粤式情，今日清爽运自旺」" },
+  { name:"福建沙茶面", cuisine:"福建·厦门风味", tags:["沙茶香浓","海鲜丰富","闽南情怀"],
+    desc:"沙茶酱的香浓，海鲜的鲜美，今日你的运势如同这碗面——层次丰富，越品越有味道，好运藏在细节之中。",
+    yi:"细细品味", ji:"囫囵吞枣", verse:"「沙茶面香闽南情，今日细品运自旺」" },
+  { name:"内蒙古手把肉", cuisine:"内蒙古·草原风味", tags:["豪迈","原味","草原情怀"],
+    desc:"手把肉是草原上最豪迈的饮食方式，用手抓着吃，感受食物最原始的美味。今日宜回归本真，不要被繁文缛节束缚。",
+    yi:"回归本真", ji:"繁文缛节", verse:"「手把肉香草原情，今日豪迈运势旺」" },
+  { name:"西藏牦牛肉", cuisine:"西藏·高原风味", tags:["高原气息","纯净","力量"],
+    desc:"牦牛肉来自高原，纯净而有力量，今日你的运势如同高原上的牦牛——坚韧不拔，无惧风雪，必能到达目的地。",
+    yi:"坚韧不拔", ji:"轻言放弃", verse:"「牦牛肉香高原情，今日坚韧运自旺」" },
+
+  // ── 海鲜系列 ──
+  { name:"清蒸大闸蟹", cuisine:"江苏·阳澄湖风味", tags:["鲜甜","膏黄丰满","秋日限定"],
+    desc:"大闸蟹是秋天最美好的馈赠，膏黄丰满，鲜甜无比。今日宜把握时机，秋天的收获正在等待你，不要错过！",
+    yi:"把握时机", ji:"错失良机", verse:"「大闸蟹香秋日来，今日把握运势开」" },
+  { name:"生蚝", cuisine:"海鲜·经典", tags:["鲜美","海洋气息","营养丰富"],
+    desc:"生蚝是大海最纯粹的馈赠，鲜美无比，今日宜以开放的心态接受新事物，大海般的胸怀，必能容纳万物。",
+    yi:"开放心态", ji:"固执己见", verse:"「生蚝鲜美海洋情，今日开放运自旺」" },
+  { name:"清蒸鲈鱼", cuisine:"粤菜·海鲜经典", tags:["鲜嫩","清淡","粤式精髓"],
+    desc:"清蒸鲈鱼以最简单的方式呈现食材本味，今日宜回归本真，不需要复杂，做真实的自己，自然散发光芒。",
+    yi:"回归本真", ji:"过度包装", verse:"「清蒸鲈鱼见本味，今日清明运自来」" },
+  { name:"麻辣小龙虾", cuisine:"湖北·夜宵经典", tags:["热辣","夏日必备","热闹"],
+    desc:"剥壳的过程就是突破的过程，今日宜迎难而上，突破重重阻碍，必有大收获！",
+    yi:"迎难而上", ji:"逃避困难", verse:"「小龙虾里藏玄机，今日奋发运无边」" },
+
+  // ── 素食系列 ──
+  { name:"麻婆豆腐（素）", cuisine:"四川·素食版", tags:["麻辣","素食","健康"],
+    desc:"素版麻婆豆腐同样麻辣鲜香，今日宜以素净之心面对世界，清心寡欲，反而能看清事物的本质。",
+    yi:"清心寡欲", ji:"贪多嚼不烂", verse:"「素版麻婆心清净，今日清明运自旺」" },
+  { name:"宫保素鸡丁", cuisine:"川菜·素食版", tags:["酸甜辣","素食","创意"],
+    desc:"宫保素鸡丁以豆腐代替鸡肉，同样酸甜辣，今日宜以创新的思维解决问题，换个角度，柳暗花明又一村。",
+    yi:"创新思维", ji:"墨守成规", verse:"「素鸡丁里见创新，今日换角运自旺」" },
+  { name:"时蔬沙拉", cuisine:"健康轻食", tags:["清爽","养生","轻盈"],
+    desc:"绿意盎然，清爽自然，吃得清淡，心境平和，今日贵人自来。",
+    yi:"清淡饮食", ji:"大鱼大肉", verse:"「时蔬沙拉心清净，今日清心福绵延」" },
+];
+
+// ══════════════════════════════════════════════
+//  塔罗牌数据（每张牌从全局菜品库随机取）
+// ══════════════════════════════════════════════
+const TAROT = [
+  { num:"0", name:"愚者", keyword:"自由·冒险", color:"#f5a623", bg:"linear-gradient(135deg,#f5a623,#f9c784)",
+    foods:[
+      { name:"螺蛳粉", cuisine:"广西·柳州风味", tags:["臭香臭香","重口味","上瘾预警"],
+        desc:"愚者牌象征自由与冒险！螺蛳粉的臭香之气，正是今日你需要的勇气——看似不妙，实则暗藏惊喜。一碗下肚，酸辣鲜香，今日所有烦恼随汤汁一扫而空。",
+        yi:"大口嗦粉", ji:"在意他人眼光", verse:"「臭香臭香螺蛳粉，今日缘分深似海」" },
+      { name:"煎饼果子", cuisine:"天津·街头小吃", tags:["早餐之王","薄脆加蛋","天津魂"],
+        desc:"愚者牌自由显现，今日宜食煎饼果子！薄薄的面皮，金黄的鸡蛋，脆脆的薄脆，抹上甜面酱，卷起来就是一天的好心情。今日宜随心所欲，快乐最重要。",
+        yi:"随心而行", ji:"过度计划", verse:"「煎饼果子卷起来，今日随心最自在」" },
+      { name:"糖葫芦", cuisine:"北方·传统小吃", tags:["酸甜脆爽","童年记忆","冬日限定"],
+        desc:"愚者牌带来童心！酸甜的山楂，晶莹的糖衣，一串在手，童年的快乐瞬间涌来。今日宜保持童心，用最纯粹的眼光看世界，好运自然来。",
+        yi:"保持童心", ji:"过于世故", verse:"「糖葫芦红映童年，今日纯真好运来」" }
+    ]
+  },
+  { num:"I", name:"魔术师", keyword:"意志·创造", color:"#e05c5c", bg:"linear-gradient(135deg,#e05c5c,#ff8a80)",
+    foods:[
+      { name:"麻婆豆腐", cuisine:"四川·川菜经典", tags:["麻辣烫嫩","下饭神器","川菜之魂"],
+        desc:"魔术师牌意志显现！麻、辣、烫、嫩、鲜，五味俱全，今日你的热情如这锅红油般滚烫。遇事不要退缩，像豆腐一样，外柔内嫩，以柔克刚。",
+        yi:"热情似火", ji:"冷漠待人", verse:"「麻辣豆腐暖人心，今日热情感动天」" },
+      { name:"夫妻肺片", cuisine:"四川·成都名菜", tags:["麻辣鲜香","名字吓人","实则美味"],
+        desc:"魔术师牌创造力爆发！夫妻肺片名字虽吓人，实则是牛肉、牛杂的美妙组合，麻辣鲜香，层次丰富。今日事情表面看起来复杂，实则暗藏惊喜。",
+        yi:"深入了解", ji:"以貌取人", verse:"「名字吓人味绝佳，今日惊喜藏其中」" },
+      { name:"重庆小面", cuisine:"重庆·江湖风味", tags:["麻辣鲜香","江湖气息","灵魂早餐"],
+        desc:"魔术师牌火气旺盛！今日你的运势如同这碗面——看起来红彤彤，实则充满活力。麻辣鲜香，一口下去，整个人都精神了，今日行事宜大胆果断。",
+        yi:"麻辣到底", ji:"委曲求全", verse:"「一碗小面辣翻天，今日运势红似火」" }
+    ]
+  },
+  { num:"II", name:"女祭司", keyword:"直觉·神秘", color:"#9c27b0", bg:"linear-gradient(135deg,#9c27b0,#ce93d8)",
+    foods:[
+      { name:"越南河粉", cuisine:"越南·河内风味", tags:["清爽鲜美","香草满满","治愈系"],
+        desc:"女祭司牌沉静显现，今日宜食越南河粉。清澈的骨汤，洁白的米粉，新鲜的香草，简单纯粹，今日你需要放慢脚步，清空杂念，在清淡中找到真正的满足。",
+        yi:"慢下来", ji:"急功近利", verse:"「清汤河粉香草鲜，今日静心见清明」" },
+      { name:"云南过桥米线", cuisine:"云南·蒙自风味", tags:["汤鲜料足","仪式感满满","云南情怀"],
+        desc:"女祭司牌神秘显现，今日宜食过桥米线。相传妻子为丈夫送饭过桥，以鸡油保温，今日你的运势充满温情与智慧。仪式感满满的一碗米线，今日宜珍惜身边的人。",
+        yi:"珍惜情缘", ji:"忽视身边人", verse:"「过桥米线情意长，今日温情暖人心」" },
+      { name:"日式拉面", cuisine:"日本·博多风味", tags:["浓郁豚骨","温暖治愈","深夜食堂"],
+        desc:"女祭司牌月光柔和，今日情绪如月光般温柔，宜食日式拉面。浓郁的豚骨汤底，弹牙的面条，半熟溏心蛋，今日适合一个人静静享用，在温暖中找回内心的平静。",
+        yi:"独处充电", ji:"人多嘈杂", verse:"「豚骨浓汤暖夜色，今日月光照心田」" }
+    ]
+  },
+  { num:"III", name:"皇后", keyword:"丰盛·母性", color:"#2e7d32", bg:"linear-gradient(135deg,#2e7d32,#81c784)",
+    foods:[
+      { name:"广式早茶", cuisine:"广东·粤式茶楼", tags:["虾饺烧卖","一盅两件","慢生活"],
+        desc:"皇后牌丰盛显现，今日宜享广式早茶！虾饺、烧卖、叉烧包、蛋挞，一盅两件，慢慢品味，今日宜放慢节奏，享受生活的美好，不要急，好东西值得等待。",
+        yi:"慢慢享受", ji:"狼吞虎咽", verse:"「一盅两件早茶香，今日悠然自得乐」" },
+      { name:"泰式绿咖喱", cuisine:"泰国·曼谷风味", tags:["椰香浓郁","香料丰富","异域风情"],
+        desc:"皇后牌力量显现，今日宜食泰式绿咖喱！椰奶的甘甜，青咖喱的辛香，各种香料的层次，今日你的内心力量强大，能够驾驭复杂局面，如同这道菜——看似复杂，实则和谐。",
+        yi:"掌控全局", ji:"优柔寡断", verse:"「椰香咖喱异域情，今日力量无人挡」" },
+      { name:"杨枝甘露", cuisine:"香港·甜品经典", tags:["芒果椰奶","清甜解暑","港式风情"],
+        desc:"皇后牌甜蜜闪耀，今日宜食杨枝甘露！芒果的甜蜜，椰奶的香浓，西柚的清新，三者交融，今日你的运势如同这碗甜品——甜蜜而清爽，好事接连而来。",
+        yi:"享受甜蜜", ji:"苦苦挣扎", verse:"「芒果椰奶甘露甜，今日好事接连来」" }
+    ]
+  },
+  { num:"IV", name:"皇帝", keyword:"权威·秩序", color:"#e65100", bg:"linear-gradient(135deg,#e65100,#ffb74d)",
+    foods:[
+      { name:"北京烤鸭", cuisine:"北京·宫廷风味", tags:["皮脆肉嫩","仪式感满满","人生享受"],
+        desc:"皇帝牌帝王之气显现！今日宜享用北京烤鸭，皮脆肉嫩，配以薄饼葱丝，一口下去尽是人间至味。今日你气场强大，宜犒劳自己，大事可成。",
+        yi:"犒劳自己", ji:"省吃俭用", verse:"「金皮玉肉帝王鸭，今日气场无人挡」" },
+      { name:"佛跳墙", cuisine:"福建·闽菜之王", tags:["食材丰富","滋补养生","人生巅峰"],
+        desc:"皇帝牌至尊显现，今日宜享佛跳墙。鲍鱼、海参、鱼翅、干贝，汇聚天下珍馐，香气四溢，连佛祖都忍不住跳墙来吃。今日你的运势达到顶峰，宜大胆追求最好的。",
+        yi:"追求极致", ji:"将就凑合", verse:"「珍馐汇聚佛跳墙，今日运势登顶峰」" },
+      { name:"新疆大盘鸡", cuisine:"新疆·西域风味", tags:["豪迈大气","土豆鸡肉","西域风情"],
+        desc:"皇帝牌勇往直前，今日宜食新疆大盘鸡！豪迈的大盘，鲜嫩的鸡肉，软糯的土豆，宽厚的皮带面，今日你的气场如同西域大漠——广阔无边，豪迈大气，遇事不退缩。",
+        yi:"豪迈前行", ji:"畏首畏尾", verse:"「大盘鸡香飘西域，今日豪气冲云天」" }
+    ]
+  },
+  { num:"V", name:"教皇", keyword:"智慧·传统", color:"#5d4037", bg:"linear-gradient(135deg,#5d4037,#a1887f)",
+    foods:[
+      { name:"东坡肉", cuisine:"浙江·杭帮菜", tags:["肥而不腻","文人情怀","慢生活"],
+        desc:"教皇牌智慧显现，今日宜享东坡肉。苏东坡曰「慢著火，少著水，火候足时它自美」——今日凡事不可急躁，慢工出细活，如这方肉般，耐心等待，必有甘甜。",
+        yi:"慢慢来", ji:"急于求成", verse:"「慢火细炖东坡肉，今日耐心福气来」" },
+      { name:"新加坡肉骨茶", cuisine:"新加坡·福建移民风味", tags:["药香浓郁","滋补养生","南洋情怀"],
+        desc:"教皇牌智慧显现，今日宜食肉骨茶。胡椒、当归、枸杞，药材与猪骨的完美融合，滋补而不腻，今日宜静心养神，积蓄能量，如这锅汤般，慢慢熬出精华。",
+        yi:"养精蓄锐", ji:"消耗过度", verse:"「药香肉骨茶飘香，今日滋补运势旺」" },
+      { name:"法式洋葱汤", cuisine:"法国·巴黎风味", tags:["浓郁醇厚","芝士焗烤","冬日暖胃"],
+        desc:"教皇牌权威显现，今日宜食法式洋葱汤。慢炒至焦糖色的洋葱，浓郁的牛骨汤，厚厚的芝士焗烤，每一口都是时间的馈赠。今日宜稳重行事，厚积薄发。",
+        yi:"稳扎稳打", ji:"急于表现", verse:"「焦糖洋葱汤醇厚，今日沉稳自有威」" }
+    ]
+  },
+  { num:"VI", name:"恋人", keyword:"爱情·选择", color:"#e91e63", bg:"linear-gradient(135deg,#e91e63,#f48fb1)",
+    foods:[
+      { name:"那不勒斯披萨", cuisine:"意大利·那不勒斯风味", tags:["芝士拉丝","番茄酸甜","意式浪漫"],
+        desc:"恋人牌甜蜜显现，今日宜食那不勒斯披萨！芝士拉丝，番茄酸甜，罗勒清香，三者完美融合，正如今日你的感情运势——甜蜜而充实，宜与心爱之人共享美食。",
+        yi:"浪漫约会", ji:"独自将就", verse:"「芝士拉丝情意浓，今日爱意满人间」" },
+      { name:"提拉米苏", cuisine:"意大利·威尼斯风味", tags:["带我走","咖啡可可","浪漫甜蜜"],
+        desc:"恋人牌甜蜜显现，今日宜食提拉米苏！意大利语「带我走」，咖啡的苦涩与马斯卡彭的甜蜜完美融合。今日感情运势极佳，宜表达心意，甜蜜时刻就在眼前。",
+        yi:"勇敢表白", ji:"犹豫不决", verse:"「提拉米苏带我走，今日爱意满心头」" },
+      { name:"小笼包", cuisine:"上海·江南风味", tags:["皮薄汤多","精致小巧","上海情怀"],
+        desc:"恋人牌悦泽显现，今日宜食小笼包。皮薄如纸，汤汁丰盈，一口咬下去，幸福感爆棚。今日你的运势如同这汤汁——满满当当，溢出来都是好事，宜与人分享喜悦。",
+        yi:"分享快乐", ji:"独吞好事", verse:"「皮薄汤鲜小笼包，今日喜事满满来」" }
+    ]
+  },
+  { num:"VII", name:"战车", keyword:"胜利·意志", color:"#1565c0", bg:"linear-gradient(135deg,#1565c0,#64b5f6)",
+    foods:[
+      { name:"四川麻辣火锅", cuisine:"四川·重庆风味", tags:["麻辣鲜香","人间至味","社交神器"],
+        desc:"战车牌勇往直前，今日宜食四川麻辣火锅！红汤翻滚，麻辣鲜香，今日你的热情如同这锅底——沸腾不止，激情四射。呼朋唤友，围炉而坐，今日的快乐指数爆表！",
+        yi:"热情似火", ji:"独自发呆", verse:"「红汤翻滚麻辣香，今日热情燃四方」" },
+      { name:"韩式炸鸡", cuisine:"韩国·街头美食", tags:["外酥里嫩","配啤酒绝了","快乐源泉"],
+        desc:"战车牌光芒万丈，今日宜食韩式炸鸡！外皮酥脆，内里鲜嫩，蘸上甜辣酱，配一杯冰啤酒，今日所有压力烟消云散。运势如炸鸡般，越炸越香，越来越好！",
+        yi:"放飞自我", ji:"节制饮食", verse:"「酥脆炸鸡配啤酒，今日快乐无边界」" },
+      { name:"西班牙海鲜饭", cuisine:"西班牙·瓦伦西亚风味", tags:["色彩鲜艳","海鲜丰盛","节日气氛"],
+        desc:"战车牌光芒四射，今日宜食西班牙海鲜饭！藏红花染就的金黄米饭，虾蟹贝类的鲜美，今日你的运势如同这盘饭——色彩鲜艳，丰盛热闹，宜大展身手，光芒四射。",
+        yi:"大展身手", ji:"低调隐忍", verse:"「金黄海鲜饭飘香，今日光芒照四方」" }
+    ]
+  },
+  { num:"VIII", name:"力量", keyword:"勇气·耐心", color:"#e65100", bg:"linear-gradient(135deg,#e65100,#ffb74d)",
+    foods:[
+      { name:"烤全羊", cuisine:"新疆·西域风味", tags:["豪迈","大气","肉食天花板"],
+        desc:"力量牌降临！今日你的胃有无穷力量，烤全羊的焦香与孜然香气正在召唤你。大口吃肉，豪气冲天，今日运势如同这只羊——整个都是你的！",
+        yi:"大口吃肉", ji:"节食减肥", verse:"「力拔山兮气盖世，今日吃肉最相宜」" },
+      { name:"铁板牛排", cuisine:"西餐·经典", tags:["力量","蛋白质","满足感"],
+        desc:"力量牌象征征服与掌控。一块滋滋作响的铁板牛排，七分熟，配黑椒汁，今日你就是餐桌上的王者，没有什么能阻挡你。",
+        yi:"犒劳自己", ji:"委屈将就", verse:"「铁板烧出今日运，牛排入口气如虹」" },
+      { name:"麻辣香锅", cuisine:"川菜·街头美食", tags:["刺激","过瘾","热辣"],
+        desc:"力量牌赋予你驾驭辛辣的勇气！麻辣香锅里的每一种食材都在考验你的意志，而你，必将征服它。今日宜挑战自我，突破极限！",
+        yi:"挑战极辣", ji:"肠胃不适时", verse:"「辣意横生力量显，香锅一开运势燃」" }
+    ]
+  },
+  { num:"IX", name:"隐者", keyword:"内省·智慧", color:"#546e7a", bg:"linear-gradient(135deg,#546e7a,#b0bec5)",
+    foods:[
+      { name:"阳春面", cuisine:"苏帮·面食经典", tags:["清淡","禅意","简单"],
+        desc:"隐者牌指引你回归本真。一碗阳春面，清汤寡水，葱花点缀，看似简单，却是最深刻的智慧——少即是多。今日宜独自享用，在清淡中找到内心的宁静。",
+        yi:"独自享用", ji:"喧嚣聚餐", verse:"「一碗清汤见本心，隐者之食最养神」" },
+      { name:"日式茶泡饭", cuisine:"日本·禅意料理", tags:["禅意","清淡","治愈"],
+        desc:"隐者的智慧在于静。热茶浇在白饭上，配几片腌菜，这是一种修行，也是今日最适合你的饮食哲学。在简单中感受生命的美好。",
+        yi:"静心独处", ji:"热闹场合", verse:"「茶香入饭禅意深，今日静心福自临」" },
+      { name:"皮蛋瘦肉粥", cuisine:"粤式·粥品经典", tags:["治愈","温暖","内省"],
+        desc:"隐者牌今日降临，提示你放慢脚步。一碗热腾腾的皮蛋瘦肉粥，绵软细腻，今日宜静心养神，在温暖中思考，积蓄能量，等待时机。",
+        yi:"静心养神", ji:"焦躁冒进", verse:"「皮蛋粥里见隐者，今日静心运自好」" }
+    ]
+  },
+  { num:"X", name:"命运之轮", keyword:"转机·机遇", color:"#7b1fa2", bg:"linear-gradient(135deg,#7b1fa2,#ce93d8)",
+    foods:[
+      { name:"寿喜烧", cuisine:"日本·关东风味", tags:["甜咸交织","冬日暖心","仪式感"],
+        desc:"命运之轮转动！寿喜烧正应此象。甜咸交织的酱汁，嫩滑的牛肉，配上生鸡蛋的丝滑，今日你的运势如同这锅汤底，越煮越香，越来越好！",
+        yi:"享受当下", ji:"患得患失", verse:"「甜咸寿喜暖人心，今日星光照前路」" },
+      { name:"韩式部队锅", cuisine:"韩国·议政府风味", tags:["热闹丰盛","朋友聚餐","包容万象"],
+        desc:"命运之轮圆满显现，今日宜食部队锅！泡面、午餐肉、年糕、芝士，各种食材和谐共处，正如今日你的人际关系——包容多元，热闹非凡，宜呼朋唤友，共享美食。",
+        yi:"广结善缘", ji:"独来独往", verse:"「百味汇聚部队锅，今日缘分聚四方」" },
+      { name:"潮汕牛肉火锅", cuisine:"广东·潮汕风味", tags:["鲜嫩无比","涮10秒刚好","牛肉天花板"],
+        desc:"命运之轮转动，今日宜食潮汕牛肉火锅。清澈的骨汤，新鲜的牛肉，涮10秒刚刚好，鲜嫩无比。今日宜把握时机，不要过度，恰到好处才是最高境界。",
+        yi:"把握时机", ji:"过犹不及", verse:"「鲜嫩牛肉涮十秒，今日时机恰到好」" }
+    ]
+  },
+  { num:"XI", name:"正义", keyword:"公正·平衡", color:"#1565c0", bg:"linear-gradient(135deg,#1565c0,#90caf9)",
+    foods:[
+      { name:"天妇罗", cuisine:"日本·江户风味", tags:["轻盈酥脆","食材新鲜","精致优雅"],
+        desc:"正义牌端正显现，今日宜食天妇罗。轻盈的面衣，新鲜的食材，简单而纯粹，正如今日运势——不需要复杂，回归本质，做真实的自己，自然散发光芒。",
+        yi:"回归本真", ji:"过度包装", verse:"「轻盈天妇罗入口，今日清明见本心」" },
+      { name:"糖醋里脊", cuisine:"鲁菜·经典名菜", tags:["酸甜可口","老少皆宜","下饭必备"],
+        desc:"正义牌平衡显现，今日宜食糖醋里脊。酸甜平衡，外酥里嫩，正如今日运势——先苦后甜，先酸后甜，最终收获满满。遇到困难不要气馁，甜头就在后面。",
+        yi:"先苦后甜", ji:"半途而废", verse:"「酸甜里脊暖胃肠，今日苦尽甘来时」" },
+      { name:"日式定食", cuisine:"日本·精致料理", tags:["精致","均衡","仪式感"],
+        desc:"正义牌象征秩序与精准。日式定食的每一格都恰到好处——米饭、味噌汤、主菜、小菜，完美的平衡之道。今日宜认真对待每一件事，必有收获。",
+        yi:"认真对待", ji:"随便应付", verse:"「定食一盘见正义，今日饮食有章法」" }
+    ]
+  },
+  { num:"XII", name:"倒吊人", keyword:"等待·牺牲", color:"#00838f", bg:"linear-gradient(135deg,#00838f,#80deea)",
+    foods:[
+      { name:"慢炖牛腩", cuisine:"粤菜·经典", tags:["慢工出细活","等待值得","浓郁"],
+        desc:"倒吊人教导我们：等待是一种智慧。慢炖牛腩需要时间，但每一分钟的等待都是值得的。今日宜慢下来，享受过程，时机成熟，自然水到渠成。",
+        yi:"耐心等待", ji:"急于求成", verse:"「慢火细炖见真章，倒吊之时悟其香」" },
+      { name:"老火靓汤", cuisine:"粤菜·养生汤品", tags:["滋补","耐心","养生"],
+        desc:"倒吊人牌今日降临，提醒你放慢脚步。一锅老火靓汤，煲上四五个小时，是对自己最好的投资与等待。今日宜静心养神，积蓄能量。",
+        yi:"静心养神", ji:"焦躁冒进", verse:"「老火靓汤慢慢煲，倒吊之后运自高」" },
+      { name:"兰州拉面", cuisine:"甘肃·西北风味", tags:["一清二白","筋道弹牙","国民早餐"],
+        desc:"倒吊人象征以退为进。兰州拉面一清二白三红四绿五黄，五行俱全，今日运势均衡，诸事顺遂。宜耐心等待，时机成熟，必有大成。",
+        yi:"大口吃面", ji:"挑三拣四", verse:"「一碗拉面五行全，今日运势稳如山」" }
+    ]
+  },
+  { num:"XIII", name:"死神", keyword:"转化·新生", color:"#37474f", bg:"linear-gradient(135deg,#37474f,#90a4ae)",
+    foods:[
+      { name:"臭豆腐", cuisine:"湖南·长沙风味", tags:["闻着臭吃着香","长沙必吃","勇者游戏"],
+        desc:"死神牌代表终结与新生！臭豆腐经历发酵的「死亡」，却在油锅中获得新生，外焦里嫩，臭中带香——这就是转化的奇迹。今日宜勇于尝试，突破自我！",
+        yi:"勇于尝试", ji:"因噎废食", verse:"「臭香臭香豆腐块，今日勇者得惊喜」" },
+      { name:"皮蛋", cuisine:"中式·传统食品", tags:["转化","经典","独特"],
+        desc:"死神牌象征转化的力量。皮蛋经历了时间的转化，从普通鸡蛋变成了独特的存在，今日你也将经历美好的蜕变。接受变化，拥抱新生！",
+        yi:"接受变化", ji:"固执己见", verse:"「皮蛋入粥见死神，转化之后香满城」" },
+      { name:"榴莲", cuisine:"东南亚·水果之王", tags:["突破","极致","两极分化"],
+        desc:"死神牌今日降临，预示着颠覆性的体验！榴莲是最具突破性的食物——爱它的人视若珍宝，今日就是你突破自我的时刻！勇敢迈出第一步！",
+        yi:"勇于尝试", ji:"畏首畏尾", verse:"「榴莲一开死神现，今日突破天地间」" }
+    ]
+  },
+  { num:"XIV", name:"节制", keyword:"调和·平衡", color:"#2e7d32", bg:"linear-gradient(135deg,#2e7d32,#a5d6a7)",
+    foods:[
+      { name:"越南春卷", cuisine:"越南·清爽料理", tags:["清爽","节制","精致"],
+        desc:"节制牌象征完美的调和。越南春卷将各种食材包裹在薄薄的米纸中，清爽不油腻，正是今日你需要的饮食哲学。适量而止，恰到好处。",
+        yi:"清淡为主", ji:"油腻重口", verse:"「春卷一卷见节制，今日清爽福自至」" },
+      { name:"日式荞麦面", cuisine:"日本·清淡料理", tags:["清淡","节制","养生"],
+        desc:"节制牌今日降临，提示你回归简单。一碗清淡的荞麦面，配上清爽的蘸汁，不过分，不将就，恰到好处的满足。今日宜清心寡欲，运势自然向好。",
+        yi:"清淡饮食", ji:"大吃大喝", verse:"「荞麦一碗节制道，今日清心运自高」" },
+      { name:"地中海沙拉", cuisine:"地中海·健康料理", tags:["清爽","健康","平衡"],
+        desc:"节制牌指引你追求真正的健康。地中海饮食是世界公认最均衡的饮食方式，今日就用这份沙拉来犒劳你的身体，找到完美的平衡。",
+        yi:"均衡饮食", ji:"暴饮暴食", verse:"「地中海风今日来，节制之食最自在」" }
+    ]
+  },
+  { num:"XV", name:"恶魔", keyword:"欲望·诱惑", color:"#b71c1c", bg:"linear-gradient(135deg,#b71c1c,#ef9a9a)",
+    foods:[
+      { name:"芝士汉堡", cuisine:"美式·快餐经典", tags:["罪恶","满足","放纵"],
+        desc:"恶魔牌降临！今日就是要放纵！双层牛肉饼、厚切芝士、培根、特制酱料——这是一次美味的「堕落」，但今日你值得！放下所有顾虑，尽情享用！",
+        yi:"放纵一次", ji:"假装自律", verse:"「恶魔今日来相邀，芝士汉堡罪恶好」" },
+      { name:"奶油意面", cuisine:"意大利·经典料理", tags:["罪恶","浓郁","诱惑"],
+        desc:"恶魔牌今日降临，诱惑你放下所有顾虑。浓郁的奶油意面，满满的芝士，这是今日最甜蜜的「罪恶」，请尽情享用！你已经努力太久了！",
+        yi:"享受美食", ji:"过度节制", verse:"「奶油意面恶魔香，今日放纵无需慌」" },
+      { name:"炸鸡", cuisine:"韩式·街头美食", tags:["罪恶","上瘾","快乐"],
+        desc:"恶魔牌象征无法抗拒的诱惑。酥脆的炸鸡皮、鲜嫩的鸡肉、甜辣的酱料——今日就向这份诱惑投降吧，你已经努力太久了！",
+        yi:"享受当下", ji:"过度自责", verse:"「炸鸡一口恶魔笑，今日放纵最逍遥」" }
+    ]
+  },
+  { num:"XVI", name:"塔", keyword:"突破·觉醒", color:"#e65100", bg:"linear-gradient(135deg,#e65100,#ffcc80)",
+    foods:[
+      { name:"爆辣串串香", cuisine:"川式·串串经典", tags:["突破","爆发","刺激"],
+        desc:"塔牌象征突破与觉醒！今日就要打破常规，来一串爆辣串串香，让辣意冲破你的味觉防线，迎来全新的觉醒！今日宜突破自我，迎接变化！",
+        yi:"突破自我", ji:"墨守成规", verse:"「塔倒之时新生来，串串一口运势开」" },
+      { name:"爆炒腰花", cuisine:"川菜·经典", tags:["爆发","火候","刺激"],
+        desc:"塔牌代表突如其来的变化。爆炒腰花需要极高的火候，瞬间的爆发成就极致的口感，今日你也将迎来属于你的「爆发时刻」，把握机会！",
+        yi:"把握时机", ji:"犹豫不决", verse:"「爆炒一锅塔势起，今日运势如火炽」" },
+      { name:"麻辣小龙虾", cuisine:"湖北·夜宵经典", tags:["突破","热辣","夏日必备"],
+        desc:"塔牌今日降临，预示着颠覆性的体验！麻辣小龙虾，剥壳的过程就是突破的过程，今日宜迎难而上，突破重重阻碍，必有大收获！",
+        yi:"迎难而上", ji:"逃避困难", verse:"「小龙虾里塔势显，今日突破运无边」" }
+    ]
+  },
+  { num:"XVII", name:"星星", keyword:"希望·灵感", color:"#0277bd", bg:"linear-gradient(135deg,#0277bd,#81d4fa)",
+    foods:[
+      { name:"泰式芒果糯米饭", cuisine:"泰国·甜品经典", tags:["甜蜜","异域","治愈"],
+        desc:"星星牌今日降临，带来甜蜜的希望。泰式芒果糯米饭，金黄的芒果配上椰香糯米，每一口都是对美好生活的向往。今日运势如星光般闪耀！",
+        yi:"享受甜蜜", ji:"自我苛责", verse:"「芒果糯米星光下，今日甜蜜福到家」" },
+      { name:"彩虹蛋糕", cuisine:"甜品·梦幻系列", tags:["希望","梦幻","甜蜜"],
+        desc:"星星牌象征美好的希望。彩虹蛋糕的每一层都是不同的颜色与味道，就像今日的你，充满了无限可能与美好期待。今日运势如彩虹般绚烂！",
+        yi:"期待美好", ji:"悲观消极", verse:"「彩虹蛋糕星光映，今日希望在心中」" },
+      { name:"广式早茶", cuisine:"广东·粤式茶楼", tags:["希望","丰盛","美好"],
+        desc:"星星牌带来希望与灵感！今日宜享广式早茶，虾饺、烧卖、叉烧包，每一道都是对美好生活的期许。今日运势如晨星般明亮，诸事皆顺！",
+        yi:"积极向上", ji:"消极懈怠", verse:"「早茶一盅星光照，今日希望满心怀」" }
+    ]
+  },
+  { num:"XVIII", name:"月亮", keyword:"直觉·梦境", color:"#4527a0", bg:"linear-gradient(135deg,#4527a0,#9575cd)",
+    foods:[
+      { name:"月饼", cuisine:"中式·传统糕点", tags:["月亮","思念","传统"],
+        desc:"月亮牌降临！今日宜吃月饼，感受传统的温暖。莲蓉蛋黄或五仁，每一口都是对美好时光的回忆与对未来的期许。今日宜怀旧感恩，珍惜当下。",
+        yi:"怀旧感恩", ji:"急功近利", verse:"「月亮高悬月饼香，今日思念化吉祥」" },
+      { name:"汤圆", cuisine:"中式·传统甜品", tags:["圆满","团圆","甜蜜"],
+        desc:"月亮牌象征圆满与团圆。一碗热腾腾的汤圆，芝麻或花生馅，甜蜜软糯，今日宜与家人共享，感受团圆的温暖，运势圆满向好。",
+        yi:"家人团聚", ji:"独自漂泊", verse:"「汤圆一碗月光照，今日团圆福自到」" },
+      { name:"抹茶冰淇淋", cuisine:"日式·甜品经典", tags:["梦幻","清冷","月色"],
+        desc:"月亮牌今日降临，带来梦幻的直觉。抹茶冰淇淋的清冷苦甜，如同月光般清冷而迷人，今日跟随直觉，相信自己的感觉，必有收获。",
+        yi:"相信直觉", ji:"过度理性", verse:"「抹茶月色今夜凉，直觉引路福绵长」" }
+    ]
+  },
+  { num:"XIX", name:"太阳", keyword:"活力·成功", color:"#f57f17", bg:"linear-gradient(135deg,#f57f17,#ffee58)",
+    foods:[
+      { name:"海南鸡饭", cuisine:"东南亚·经典料理", tags:["阳光","清爽","满足"],
+        desc:"太阳牌象征光明与成功。海南鸡饭的鸡肉嫩滑，米饭香浓，配上姜葱酱，简单而完美，正如今日你的运势——明朗而充实，诸事皆顺！",
+        yi:"享受当下", ji:"杞人忧天", verse:"「海南鸡饭太阳照，今日运势节节高」" },
+      { name:"芒果班戟", cuisine:"港式·甜品经典", tags:["甜蜜","阳光","幸福"],
+        desc:"太阳牌今日大放光芒！芒果班戟金黄饱满，如同太阳般充满活力，每一口都是甜蜜的幸福，今日诸事皆顺，好运连连！",
+        yi:"分享快乐", ji:"独自忧愁", verse:"「芒果班戟太阳甜，今日幸福满人间」" },
+      { name:"烤肉拼盘", cuisine:"韩式·烤肉经典", tags:["活力","热闹","满足"],
+        desc:"太阳牌降临，今日运势大吉！来一份丰盛的烤肉拼盘，五花肉、牛肉、鸡肉，在炭火上滋滋作响，用满满的活力迎接美好的一天！",
+        yi:"积极行动", ji:"消极懈怠", verse:"「烤肉飘香太阳旺，今日活力满四方」" }
+    ]
+  },
+  { num:"XX", name:"审判", keyword:"觉醒·召唤", color:"#1a237e", bg:"linear-gradient(135deg,#1a237e,#7986cb)",
+    foods:[
+      { name:"佛跳墙", cuisine:"福建·闽菜之王", tags:["顶级","觉醒","珍贵"],
+        desc:"审判牌降临，今日是重要的时刻！佛跳墙汇聚山珍海味，是饮食界的「最终审判」，今日宜犒劳自己，迎接人生新篇章，你值得最好的！",
+        yi:"犒劳自己", ji:"委屈将就", verse:"「审判之日佛跳墙，今日觉醒运势旺」" },
+      { name:"北京烤鸭", cuisine:"北京·宫廷风味", tags:["经典","仪式感","觉醒"],
+        desc:"审判牌象征重要的召唤。北京烤鸭是中华饮食的「终极审判」，片皮鸭、薄饼、葱丝、甜面酱，今日宜以此仪式迎接新的开始，觉醒时刻已到！",
+        yi:"仪式感", ji:"随便应付", verse:"「烤鸭一片审判来，今日觉醒福满怀」" },
+      { name:"东坡肉", cuisine:"浙江·杭帮菜", tags:["经典","觉醒","文化"],
+        desc:"审判牌今日降临，召唤你迎接重要的时刻。东坡肉慢火细炖，每一口都是时间的馈赠，今日宜以此仪式感迎接人生的重要转折点。",
+        yi:"珍惜时光", ji:"虚度光阴", verse:"「东坡一肉审判日，今日觉醒运无极」" }
+    ]
+  },
+  { num:"XXI", name:"世界", keyword:"圆满·完成", color:"#1b5e20", bg:"linear-gradient(135deg,#1b5e20,#66bb6a)",
+    foods:[
+      { name:"火锅", cuisine:"中式·火锅经典", tags:["圆满","包容","热闹"],
+        desc:"世界牌象征圆满与包容。火锅能容纳世间万物，肉类、蔬菜、豆腐、海鲜，在沸腾的汤底中和谐共处，正如今日你的圆满人生。今日宜广纳百川！",
+        yi:"广纳百川", ji:"固执偏见", verse:"「火锅一锅世界圆，今日圆满福无边」" },
+      { name:"寿司拼盘", cuisine:"日本·精致料理", tags:["精致","圆满","完美"],
+        desc:"世界牌今日降临，带来完美的圆满感。一盘精致的寿司拼盘，每一贯都是极致的工艺，今日你的一切努力都将得到完美的回报，圆满收官！",
+        yi:"享受成果", ji:"继续折腾", verse:"「寿司一盘世界美，今日圆满运无悔」" },
+      { name:"满汉全席", cuisine:"宫廷·顶级料理", tags:["顶级","全面","圆满"],
+        desc:"世界牌降临，召唤你迎接最高规格的饮食体验！满汉全席是饮食界的终极圆满，今日你值得最好的一切，运势达到顶峰，诸事皆成！",
+        yi:"追求极致", ji:"自我设限", verse:"「满汉全席世界圆，今日圆满运无边」" }
+    ]
+  }
+];
+
+// ══════════════════════════════════════════════
+//  六爻卦数据
+// ══════════════════════════════════════════════
+const HEXAGRAMS = [
+  { name:"乾卦", sub:"天行健，君子以自强不息", color:"#e65100", bg:"linear-gradient(135deg,#e65100,#ffb74d)",
+    foods:[
+      { name:"烤全羊", cuisine:"新疆·西域风味", tags:["豪迈","大气","滋补"],
+        desc:"乾卦主阳气充盈，今日宜食烤全羊。孜然飘香，外焦里嫩，正如乾卦「天行健」——吃一口，元气满满，今日诸事皆顺！",
+        yi:"大口吃肉", ji:"节食减肥", verse:"「乾坤浩荡羊肉香，今日豪迈运势旺」" },
+      { name:"北京烤鸭", cuisine:"北京·宫廷风味", tags:["皮脆肉嫩","仪式感","帝王气"],
+        desc:"乾卦帝王之气，今日宜享北京烤鸭。皮脆肉嫩，配以薄饼葱丝，一口下去尽是人间至味。今日你气场强大，宜犒劳自己，大事可成。",
+        yi:"犒劳自己", ji:"省吃俭用", verse:"「金皮玉肉乾卦显，今日气场无人挡」" },
+      { name:"佛跳墙", cuisine:"福建·闽菜之王", tags:["食材丰富","滋补","人生巅峰"],
+        desc:"乾卦至尊，今日宜享佛跳墙。鲍鱼、海参、鱼翅、干贝，汇聚天下珍馐，香气四溢，今日你的运势达到顶峰，宜大胆追求最好的。",
+        yi:"追求极致", ji:"将就凑合", verse:"「珍馐汇聚乾卦旺，今日运势登顶峰」" }
+    ]
+  },
+  { name:"坤卦", sub:"地势坤，君子以厚德载物", color:"#2e7d32", bg:"linear-gradient(135deg,#2e7d32,#81c784)",
+    foods:[
+      { name:"白米饭配家常菜", cuisine:"家常·温暖料理", tags:["朴实","踏实","家的味道"],
+        desc:"坤卦主大地滋养，今日宜食家常菜。一碗白米饭，几道家常小炒，看似平淡，却是最踏实的幸福，运势稳中有升。",
+        yi:"回家吃饭", ji:"外出冒险", verse:"「坤德厚载家常饭，今日踏实福自来」" },
+      { name:"南瓜粥", cuisine:"粤式·粥品经典", tags:["温暖","滋养","朴实"],
+        desc:"坤卦象征大地的温暖滋养。一碗金黄的南瓜粥，甜糯绵软，如同大地母亲的怀抱，今日宜静心养神，运势平稳向好。",
+        yi:"静心养神", ji:"急功近利", verse:"「南瓜粥暖坤德厚，今日静心福自有」" },
+      { name:"广式早茶", cuisine:"广东·粤式茶楼", tags:["丰盛","包容","慢生活"],
+        desc:"坤卦厚德载物，今日宜享广式早茶。虾饺、烧卖、叉烧包，一盅两件，慢慢品味，今日宜放慢节奏，享受生活的美好。",
+        yi:"慢慢享受", ji:"狼吞虎咽", verse:"「早茶一盅坤德显，今日悠然福绵延」" }
+    ]
+  },
+  { name:"屯卦", sub:"万物始生，艰难创业", color:"#00838f", bg:"linear-gradient(135deg,#00838f,#80deea)",
+    foods:[
+      { name:"螺蛳粉", cuisine:"广西·柳州风味", tags:["挑战","独特","上瘾"],
+        desc:"屯卦主万物初生，艰难中孕育希望。螺蛳粉的臭香正如创业初期的艰辛，但一旦接受，便会上瘾——今日宜迎难而上！",
+        yi:"迎难而上", ji:"逃避困难", verse:"「屯卦初生螺蛳香，艰难之后运势旺」" },
+      { name:"重庆小面", cuisine:"重庆·江湖风味", tags:["麻辣","刺激","草根"],
+        desc:"屯卦象征在艰难中成长。重庆小面麻辣鲜香，是草根美食的代表，今日宜脚踏实地，从小事做起，终将成就大业。",
+        yi:"脚踏实地", ji:"好高骛远", verse:"「小面一碗屯卦显，艰难之中运自转」" },
+      { name:"酸辣粉", cuisine:"川渝·街头小吃", tags:["酸辣","刺激","草根"],
+        desc:"屯卦主初生之艰，酸辣粉的酸辣正是对这种艰辛的最好诠释。今日宜接受挑战，酸中有辣，辣中有香，苦尽甘来！",
+        yi:"接受挑战", ji:"半途而废", verse:"「酸辣粉里屯卦藏，今日艰辛后运旺」" }
+    ]
+  },
+  { name:"需卦", sub:"等待时机，以逸待劳", color:"#0277bd", bg:"linear-gradient(135deg,#0277bd,#81d4fa)",
+    foods:[
+      { name:"慢炖牛腩", cuisine:"粤菜·经典", tags:["等待","值得","浓郁"],
+        desc:"需卦主等待时机。慢炖牛腩需要时间，但每一分钟的等待都是值得的。今日宜耐心等待，时机成熟，自然水到渠成。",
+        yi:"耐心等待", ji:"急于求成", verse:"「需卦等待牛腩香，时机成熟运自旺」" },
+      { name:"东坡肉", cuisine:"浙江·杭帮菜", tags:["慢炖","文化","等待"],
+        desc:"需卦象征以退为进。东坡肉慢火细炖，看似无为，实则大有作为。今日放慢节奏，反而能收获意外之喜。",
+        yi:"慢慢来", ji:"急功近利", verse:"「东坡一肉需卦显，慢火细炖运自转」" },
+      { name:"老北京炸酱面", cuisine:"北京·经典面食", tags:["等待","经典","厚重"],
+        desc:"需卦主等待，炸酱面的酱料需要慢慢炒制，等待是一种智慧。今日宜沉住气，等待最好的时机，必有收获。",
+        yi:"沉住气", ji:"冒进急躁", verse:"「炸酱面里需卦藏，等待之后运势旺」" }
+    ]
+  },
+  { name:"泰卦", sub:"天地交泰，万物通达", color:"#1565c0", bg:"linear-gradient(135deg,#1565c0,#90caf9)",
+    foods:[
+      { name:"小笼包", cuisine:"上海·江南风味", tags:["皮薄汤多","精致小巧","上海情怀"],
+        desc:"泰卦天地交泰，万物通达，今日宜食小笼包。皮薄如纸，汤汁丰盈，一口咬下去，幸福感爆棚。今日你的运势如同这汤汁——满满当当，溢出来都是好事。",
+        yi:"分享快乐", ji:"独吞好事", verse:"「皮薄汤鲜泰卦显，今日喜事满满来」" },
+      { name:"寿喜烧", cuisine:"日本·关东风味", tags:["甜咸交织","冬日暖心","仪式感"],
+        desc:"泰卦通达，今日宜食寿喜烧。甜咸交织的酱汁，嫩滑的牛肉，配上生鸡蛋的丝滑，今日你的运势如同这锅汤底，越煮越香，越来越好！",
+        yi:"享受当下", ji:"患得患失", verse:"「甜咸寿喜泰卦旺，今日通达运势好」" },
+      { name:"广式早茶", cuisine:"广东·粤式茶楼", tags:["丰盛","通达","慢生活"],
+        desc:"泰卦万物通达，今日宜享广式早茶。虾饺、烧卖、叉烧包，一盅两件，慢慢品味，今日运势通达，诸事皆顺，宜与人共享美好。",
+        yi:"广结善缘", ji:"独来独往", verse:"「早茶一盅泰卦现，今日通达福绵延」" }
+    ]
+  },
+  { name:"离卦", sub:"火明两照，文明以正", color:"#e05c5c", bg:"linear-gradient(135deg,#e05c5c,#ff8a80)",
+    foods:[
+      { name:"四川麻辣火锅", cuisine:"四川·重庆风味", tags:["麻辣鲜香","人间至味","社交神器"],
+        desc:"离卦烈火，今日宜食四川麻辣火锅！红汤翻滚，麻辣鲜香，今日你的热情如同这锅底——沸腾不止，激情四射。呼朋唤友，围炉而坐，今日的快乐指数爆表！",
+        yi:"热情似火", ji:"独自发呆", verse:"「红汤翻滚离卦旺，今日热情燃四方」" },
+      { name:"麻婆豆腐", cuisine:"四川·川菜经典", tags:["麻辣烫嫩","下饭神器","川菜之魂"],
+        desc:"离卦火旺，麻婆豆腐正应此象！麻、辣、烫、嫩、鲜，五味俱全，今日你的热情如这锅红油般滚烫。遇事不要退缩，以柔克刚。",
+        yi:"热情似火", ji:"冷漠待人", verse:"「麻辣豆腐离卦显，今日热情感动天」" },
+      { name:"韩式炸鸡", cuisine:"韩国·街头美食", tags:["外酥里嫩","配啤酒绝了","快乐源泉"],
+        desc:"离卦光明，今日宜食韩式炸鸡！外皮酥脆，内里鲜嫩，蘸上甜辣酱，配一杯冰啤酒，今日所有压力烟消云散。运势如炸鸡般，越炸越香！",
+        yi:"放飞自我", ji:"节制饮食", verse:"「酥脆炸鸡离卦照，今日快乐无边界」" }
+    ]
+  },
+  { name:"坎卦", sub:"水流不息，险中求进", color:"#0277bd", bg:"linear-gradient(135deg,#0277bd,#4fc3f7)",
+    foods:[
+      { name:"潮汕牛肉火锅", cuisine:"广东·潮汕风味", tags:["鲜嫩无比","涮10秒刚好","牛肉天花板"],
+        desc:"坎卦水深，今日宜食潮汕牛肉火锅。清澈的骨汤，新鲜的牛肉，涮10秒刚刚好，鲜嫩无比。今日宜把握时机，不要过度，恰到好处才是最高境界。",
+        yi:"把握时机", ji:"过犹不及", verse:"「鲜嫩牛肉坎卦深，今日时机恰到好」" },
+      { name:"越南河粉", cuisine:"越南·河内风味", tags:["清爽鲜美","香草满满","治愈系"],
+        desc:"坎卦水流不息，今日宜食越南河粉。清澈的骨汤，洁白的米粉，新鲜的香草，简单纯粹，今日宜放慢脚步，在清淡中找到真正的满足。",
+        yi:"慢下来", ji:"急功近利", verse:"「清汤河粉坎卦现，今日静心见清明」" },
+      { name:"日式拉面", cuisine:"日本·博多风味", tags:["浓郁豚骨","温暖治愈","深夜食堂"],
+        desc:"坎卦险中求进，今日宜食日式拉面。浓郁的豚骨汤底，弹牙的面条，半熟溏心蛋，今日适合一个人静静享用，在温暖中找回内心的平静。",
+        yi:"独处充电", ji:"人多嘈杂", verse:"「豚骨浓汤坎卦深，今日月光照心田」" }
+    ]
+  },
+  { name:"震卦", sub:"雷动万物，奋发向上", color:"#f57f17", bg:"linear-gradient(135deg,#f57f17,#ffee58)",
+    foods:[
+      { name:"兰州拉面", cuisine:"甘肃·西北风味", tags:["一清二白","筋道弹牙","国民早餐"],
+        desc:"震卦动而有力，今日宜食兰州拉面。一清二白三红四绿五黄，五行俱全，今日运势均衡，诸事顺遂。大口吃面，元气满满！",
+        yi:"大口吃面", ji:"挑三拣四", verse:"「一碗拉面震卦显，今日运势稳如山」" },
+      { name:"爆炒腰花", cuisine:"川菜·经典", tags:["爆发","火候","刺激"],
+        desc:"震卦雷动，今日宜食爆炒腰花！爆炒腰花需要极高的火候，瞬间的爆发成就极致的口感，今日你也将迎来属于你的「爆发时刻」！",
+        yi:"把握时机", ji:"犹豫不决", verse:"「爆炒一锅震卦起，今日运势如雷炽」" },
+      { name:"麻辣小龙虾", cuisine:"湖北·夜宵经典", tags:["热辣","夏日必备","热闹"],
+        desc:"震卦奋发向上，今日宜食麻辣小龙虾！剥壳的过程就是突破的过程，今日宜迎难而上，突破重重阻碍，必有大收获！",
+        yi:"迎难而上", ji:"逃避困难", verse:"「小龙虾里震卦显，今日奋发运无边」" }
+    ]
+  }
+];
+
+// ══════════════════════════════════════════════
+//  食物SVG图库
+// ══════════════════════════════════════════════
+function getFoodSVG(name, color) {
+  const svgs = {
+    '螺蛳粉': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="68" rx="36" ry="18" fill="#ffe9a0"/>
+      <path d="M16 65 Q50 55 84 65 Q84 82 50 82 Q16 82 16 65Z" fill="#fff8e1"/>
+      <path d="M20 64 Q30 58 40 62 Q50 56 60 62 Q70 58 80 64" fill="none" stroke="#f5c842" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M22 70 Q32 64 42 68 Q52 62 62 68 Q72 64 78 70" fill="none" stroke="#f5c842" stroke-width="2" stroke-linecap="round"/>
+      <ellipse cx="35" cy="60" rx="7" ry="5" fill="#8B4513" opacity="0.7"/>
+      <ellipse cx="65" cy="58" rx="6" ry="4" fill="#8B4513" opacity="0.7"/>
+      <circle cx="50" cy="56" r="5" fill="#ff6b35" opacity="0.8"/>
+      <circle cx="42" cy="54" r="3" fill="#2d8a2d" opacity="0.8"/>
+      <circle cx="58" cy="55" r="3" fill="#2d8a2d" opacity="0.8"/>
+      <ellipse cx="50" cy="38" rx="12" ry="8" fill="#c8a06e"/>
+      <path d="M38 38 Q50 28 62 38 Q62 46 50 46 Q38 46 38 38Z" fill="#d4b080"/>
+    </svg>`,
+    '北京烤鸭': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M28 55 Q50 42 72 55 Q72 75 50 78 Q28 75 28 55Z" fill="#c8700a"/>
+      <path d="M30 54 Q50 44 70 54 Q70 72 50 75 Q30 72 30 54Z" fill="#e8900a"/>
+      <path d="M32 53 Q50 46 68 53 Q68 68 50 71 Q32 68 32 53Z" fill="#f5a623"/>
+      <ellipse cx="50" cy="52" rx="18" ry="8" fill="#d4840a"/>
+      <path d="M35 50 Q50 44 65 50" fill="none" stroke="#c8700a" stroke-width="1.5"/>
+      <circle cx="42" cy="48" r="2" fill="#8B4513" opacity="0.6"/>
+      <circle cx="58" cy="47" r="2" fill="#8B4513" opacity="0.6"/>
+      <rect x="38" y="76" width="24" height="4" rx="2" fill="#f5f0e8"/>
+    </svg>`,
+    '四川麻辣火锅': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M18 66 Q50 56 82 66 Q82 80 50 82 Q18 80 18 66Z" fill="#fff0f0"/>
+      <ellipse cx="50" cy="64" rx="30" ry="12" fill="#ff8080" opacity="0.5"/>
+      <ellipse cx="50" cy="62" rx="28" ry="10" fill="#e05c5c" opacity="0.7"/>
+      <circle cx="36" cy="60" r="4" fill="#c84020" opacity="0.8"/>
+      <circle cx="50" cy="58" r="4" fill="#c84020" opacity="0.8"/>
+      <circle cx="64" cy="59" r="4" fill="#c84020" opacity="0.8"/>
+      <circle cx="43" cy="64" r="3" fill="#f5c842" opacity="0.8"/>
+      <circle cx="57" cy="63" r="3" fill="#f5c842" opacity="0.8"/>
+      <path d="M36 42 Q38 34 40 42" fill="none" stroke="#ff8080" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+      <path d="M50 40 Q52 32 54 40" fill="none" stroke="#ff8080" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+      <path d="M64 42 Q66 34 68 42" fill="none" stroke="#ff8080" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+    </svg>`,
+    '小笼包': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M24 65 Q50 52 76 65 Q76 78 50 80 Q24 78 24 65Z" fill="#fff8e8"/>
+      <path d="M26 64 Q50 54 74 64 Q74 76 50 78 Q26 76 26 64Z" fill="#fdf5e0"/>
+      <path d="M30 62 Q50 56 70 62" fill="none" stroke="#e8c090" stroke-width="1.5"/>
+      <path d="M50 52 Q52 44 54 40 Q56 36 50 34 Q44 36 46 40 Q48 44 50 52Z" fill="#f5e0c0"/>
+      <path d="M50 52 Q46 46 42 44 Q38 42 36 46 Q38 50 42 52 Q46 54 50 52Z" fill="#f5e0c0"/>
+      <path d="M50 52 Q54 46 58 44 Q62 42 64 46 Q62 50 58 52 Q54 54 50 52Z" fill="#f5e0c0"/>
+    </svg>`,
+    '麻婆豆腐': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="22" y="50" width="56" height="36" rx="10" fill="#e8c090"/>
+      <rect x="24" y="52" width="52" height="32" rx="9" fill="#fff5ee"/>
+      <rect x="28" y="55" width="18" height="18" rx="4" fill="#f5f0e8"/>
+      <rect x="54" y="55" width="18" height="18" rx="4" fill="#f5f0e8"/>
+      <rect x="41" y="55" width="18" height="18" rx="4" fill="#f5f0e8"/>
+      <rect x="28" y="68" width="44" height="12" rx="4" fill="#f5f0e8"/>
+      <ellipse cx="50" cy="52" rx="26" ry="8" fill="#e05c5c" opacity="0.85"/>
+      <circle cx="38" cy="50" r="3" fill="#c84020" opacity="0.8"/>
+      <circle cx="50" cy="49" r="3" fill="#c84020" opacity="0.8"/>
+      <circle cx="62" cy="50" r="3" fill="#c84020" opacity="0.8"/>
+      <circle cx="44" cy="52" r="2" fill="#2d8a2d" opacity="0.9"/>
+      <circle cx="56" cy="51" r="2" fill="#2d8a2d" opacity="0.9"/>
+    </svg>`,
+    '东坡肉': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="28" y="42" width="44" height="44" rx="10" fill="#c85a2a"/>
+      <rect x="30" y="44" width="40" height="40" rx="9" fill="#e07040"/>
+      <rect x="32" y="46" width="36" height="36" rx="8" fill="#f09060"/>
+      <rect x="34" y="48" width="32" height="14" rx="4" fill="#f5c0a0"/>
+      <rect x="34" y="62" width="32" height="8" rx="3" fill="#e07040"/>
+      <rect x="34" y="70" width="32" height="14" rx="4" fill="#c85a2a"/>
+      <rect x="44" y="30" width="12" height="14" rx="3" fill="#c8a06e"/>
+      <rect x="46" y="28" width="8" height="4" rx="2" fill="#a07040"/>
+    </svg>`,
+  };
+  if (svgs[name]) return svgs[name];
+  // 通用SVG
+  const foodEmojis = {
+    '重庆小面':'🍜','兰州拉面':'🍜','夫妻肺片':'🥩','糖醋里脊':'🍖','佛跳墙':'🏺',
+    '寿喜烧':'🫕','韩式炸鸡':'🍗','日式拉面':'🍜','韩式部队锅':'🫕','天妇罗':'🍤',
+    '越南河粉':'🍜','泰式绿咖喱':'🍛','新加坡肉骨茶':'🍲','那不勒斯披萨':'🍕',
+    '法式洋葱汤':'🍲','西班牙海鲜饭':'🥘','煎饼果子':'🥞','臭豆腐':'🫘','糖葫芦':'🍡',
+    '潮汕牛肉火锅':'🫕','杨枝甘露':'🥭','提拉米苏':'🍰','广式早茶':'🍵',
+    '新疆大盘鸡':'🍗','云南过桥米线':'🍜','烤全羊':'🐑','铁板牛排':'🥩',
+    '麻辣香锅':'🌶️','阳春面':'🍜','日式茶泡饭':'🍵','皮蛋瘦肉粥':'🥣',
+    '慢炖牛腩':'🍖','老火靓汤':'🍲','老北京炸酱面':'🍜','月饼':'🥮',
+    '汤圆':'🍡','抹茶冰淇淋':'🍵','彩虹蛋糕':'🎂','泰式芒果糯米饭':'🥭',
+    '芒果班戟':'🥭','海南鸡饭':'🍚','烤肉拼盘':'🥩','芝士汉堡':'🍔',
+    '奶油意面':'🍝','炸鸡':'🍗','爆辣串串香':'🍢','爆炒腰花':'🍳',
+    '麻辣小龙虾':'🦞','越南春卷':'🌿','日式荞麦面':'🍜','地中海沙拉':'🥗',
+    '火锅':'🫕','寿司拼盘':'🍣','满汉全席':'👑','白米饭配家常菜':'🍚',
+    '南瓜粥':'🎃','酸辣粉':'🍲','榴莲':'🍈','皮蛋':'🥚',
+    '日式定食':'🍱','烤全羊':'🐑'
+  };
+  const emoji = foodEmojis[name] || '🍽️';
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="42" fill="rgba(255,255,255,0.2)"/>
+    <text x="50" y="62" text-anchor="middle" font-size="42">${emoji}</text>
+  </svg>`;
+}
+
+// ══════════════════════════════════════════════
+//  状态
+// ══════════════════════════════════════════════
+let mode = 'tarot';
+let casting = false;
+
+function switchMode(m) {
+  mode = m;
+  document.getElementById('tab-tarot').classList.toggle('active', m === 'tarot');
+  document.getElementById('tab-hex').classList.toggle('active', m === 'hex');
+  document.getElementById('cast-hint').innerHTML = m === 'tarot'
+    ? '心中默念今日想吃什么<br/>点击牌堆，抽取命运之牌'
+    : '心中默念今日想吃什么<br/>点击铜钱，天机自现';
+  document.getElementById('tarot-deck').style.display = m === 'tarot' ? 'block' : 'none';
+  document.getElementById('coin-btn').style.display = m === 'hex' ? 'flex' : 'none';
+  document.getElementById('cast-section').style.display = 'flex';
+  document.getElementById('result-section').classList.remove('show');
+  document.getElementById('loading').classList.remove('show');
+  casting = false;
+}
+
+function randInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
+function doCast() {
+  if (casting) return;
+  casting = true;
+
+  if (mode === 'tarot') {
+    const deck = document.getElementById('tarot-deck');
+    deck.classList.add('drawing');
+    document.getElementById('loading-text').textContent = '塔罗牌正在感应你的缘分…';
+  } else {
+    const btn = document.getElementById('coin-btn');
+    btn.classList.add('shaking');
+    setTimeout(() => btn.classList.remove('shaking'), 600);
+    document.getElementById('loading-text').textContent = '六爻推演中，天机即将揭晓…';
+  }
+
+  document.getElementById('cast-section').style.display = 'none';
+  document.getElementById('loading').classList.add('show');
+
+  setTimeout(() => {
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('tarot-deck').classList.remove('drawing');
+    showResult();
+  }, 1400);
+}
+
+function showResult() {
+  let title, subtitle, headerBg, headerColor, food, extraHtml = '';
+
+  if (mode === 'tarot') {
+    const cardIdx = randInt(TAROT.length);
+    const card = TAROT[cardIdx];
+    food = ALL_FOODS[randInt(ALL_FOODS.length)];
+    title = card.num + ' · ' + card.name;
+    subtitle = card.keyword;
+    headerBg = card.bg;
+    headerColor = card.color;
+
+    // 塔罗牌展示
+    document.getElementById('tarot-display').style.display = 'flex';
+    document.getElementById('hex-display').style.display = 'none';
+    document.getElementById('block-title-text').textContent = '塔罗解读';
+    document.getElementById('tarot-reveal').style.background = card.bg;
+    document.getElementById('tarot-reveal').innerHTML = `
+      <div class="tarot-reveal-num">${card.num}</div>
+      <div class="tarot-reveal-svg">${getTarotSVG(card.num)}</div>
+      <div class="tarot-reveal-name">${card.name}</div>
+      <div class="tarot-reveal-keyword">${card.keyword}</div>
+    `;
+  } else {
+    const hexIdx = randInt(HEXAGRAMS.length);
+    const hex = HEXAGRAMS[hexIdx];
+    food = ALL_FOODS[randInt(ALL_FOODS.length)];
+    title = hex.name;
+    subtitle = hex.sub;
+    headerBg = hex.bg;
+    headerColor = hex.color;
+
+    // 六爻展示
+    document.getElementById('hex-display').style.display = 'flex';
+    document.getElementById('tarot-display').style.display = 'none';
+    document.getElementById('block-title-text').textContent = '卦象解读';
+    document.getElementById('hex-name').textContent = hex.name;
+    document.getElementById('hex-sub').textContent = hex.sub;
+
+    // 生成六爻线
+    const yaoLines = document.getElementById('yao-lines');
+    yaoLines.innerHTML = '';
+    for (let i = 0; i < 6; i++) {
+      const v = randInt(4);
+      const yang = v % 2 === 0;
+      const change = v === 0 || v === 3;
+      const row = document.createElement('div');
+      row.className = 'yao-row';
+      if (yang) {
+        row.innerHTML = `<span class="yao-num">${i+1}</span><div class="yao-yang"></div>${change ? '<span class="yao-change">○</span>' : ''}`;
+      } else {
+        row.innerHTML = `<span class="yao-num">${i+1}</span><div class="yao-yin-l"></div><div class="yao-gap"></div><div class="yao-yin-r"></div>${change ? '<span class="yao-change">○</span>' : ''}`;
+      }
+      yaoLines.appendChild(row);
+      setTimeout(() => row.classList.add('appear'), i * 120);
+    }
+  }
+
+  // 填充食物卡片
+  document.getElementById('food-header').style.background = headerBg;
+  document.getElementById('food-img-wrap').innerHTML = getFoodSVG(food.name, headerColor);
+  document.getElementById('food-name').textContent = food.name;
+  document.getElementById('food-cuisine').textContent = food.cuisine;
+  document.getElementById('food-tags').innerHTML = food.tags.map(t =>
+    `<span class="food-tag">${t}</span>`
+  ).join('');
+  document.getElementById('block-dot').style.background = headerColor;
+  document.getElementById('block-body').textContent = food.desc;
+  document.getElementById('yi-val').textContent = food.yi;
+  document.getElementById('ji-val').textContent = food.ji;
+  document.getElementById('verse').textContent = food.verse;
+  document.getElementById('verse').style.background = headerColor;
+
+  document.getElementById('result-section').classList.add('show');
+}
+
+function getTarotSVG(num) {
+  const svgs = {
+    '0': `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="28" r="14" fill="rgba(255,255,255,0.3)"/><circle cx="36" cy="25" r="3" fill="#fff"/><circle cx="44" cy="25" r="3" fill="#fff"/><path d="M35 32 Q40 36 45 32" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M28 50 Q40 44 52 50 L52 68 Q40 72 28 68 Z" fill="rgba(255,255,255,0.2)"/><path d="M52 50 L68 36" stroke="rgba(255,255,255,0.6)" stroke-width="3" stroke-linecap="round"/><circle cx="70" cy="34" r="5" fill="rgba(255,255,255,0.5)"/></svg>`,
+    'I': `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="28" r="12" fill="rgba(255,255,255,0.3)"/><circle cx="36" cy="25" r="2.5" fill="#fff"/><circle cx="44" cy="25" r="2.5" fill="#fff"/><path d="M35 32 Q40 36 45 32" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><rect x="30" y="40" width="20" height="24" rx="4" fill="rgba(255,255,255,0.2)"/><path d="M40 16 L40 8" stroke="rgba(255,255,255,0.8)" stroke-width="2.5" stroke-linecap="round"/><circle cx="40" cy="6" r="3" fill="rgba(255,255,255,0.8)"/></svg>`,
+    'default': `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="28" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.4)" stroke-width="2"/><path d="M40 20 L42 28 L50 28 L44 33 L46 41 L40 36 L34 41 L36 33 L30 28 L38 28 Z" fill="rgba(255,255,255,0.7)"/></svg>`
+  };
+  return svgs[num] || svgs['default'];
+}
+
+function resetAll() {
+  casting = false;
+  document.getElementById('result-section').classList.remove('show');
+  document.getElementById('tarot-deck').classList.remove('drawing');
+  document.getElementById('cast-section').style.display = 'flex';
+}
+
+// 初始化
+switchMode('tarot');
+</script>
+</body>
+</html>
